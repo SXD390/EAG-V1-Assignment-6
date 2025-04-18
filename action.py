@@ -1,8 +1,9 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 import logging
 from mcp import ClientSession
 from decision import ActionType, Decision
 from memory import MemoryLayer
+from pydantic import BaseModel
 from models import (
     GetRecipeInput, GetRecipeOutput,
     CompareIngredientsInput, CompareIngredientsOutput,
@@ -14,6 +15,17 @@ from models import (
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+class EmailFormatParams(BaseModel):
+    """Model for email formatting parameters"""
+    items: List[str]
+    order_id: str
+
+class ErrorResponse(BaseModel):
+    """Model for standardized error responses"""
+    error_type: str
+    message: str
+    details: Dict[str, Any] = {}
 
 class ActionLayer:
     def __init__(self, recipe_session: ClientSession, delivery_session: ClientSession, gmail_session: ClientSession, memory_layer: MemoryLayer):
@@ -126,13 +138,18 @@ class ActionLayer:
                         logger.debug(f"Extracted steps: {steps}")
                         
                         if not ingredients or not steps:
-                            raise ValueError("Failed to extract ingredients or steps from recipe")
+                            error_response = ErrorResponse(
+                                error_type="ValidationError",
+                                message="Failed to extract ingredients or steps from recipe",
+                                details={"ingredients_found": bool(ingredients), "steps_found": bool(steps)}
+                            )
+                            raise ValueError(error_response.model_dump_json())
                         
-                        # Create the recipe output model
-                        recipe_output = GetRecipeOutput(
-                            required_ingredients=ingredients,
-                            recipe_steps=steps
-                        )
+                        # Create and validate the recipe output model
+                        recipe_output = GetRecipeOutput.model_validate({
+                            "required_ingredients": ingredients,
+                            "recipe_steps": steps
+                        })
                         
                         # Update memory with recipe information
                         self.memory.update_memory(
@@ -156,11 +173,15 @@ class ActionLayer:
                             )]
                         )
                     except Exception as e:
-                        logger.error(f"Error parsing recipe response: {e}", exc_info=True)
+                        error_response = ErrorResponse(
+                            error_type="ParseError",
+                            message=f"Error parsing recipe response: {str(e)}",
+                            details={"raw_text": recipe_text if 'recipe_text' in locals() else None}
+                        )
                         return ToolResponse(
                             content=[TextContent(
                                 type="text",
-                                text=f"Error parsing recipe response: {str(e)}"
+                                text=error_response.model_dump_json()
                             )]
                         )
                 
@@ -260,10 +281,16 @@ class ActionLayer:
                 )
 
             elif decision.action == ActionType.SEND_EMAIL:
-                # Format the email message
+                # Validate email format parameters
+                email_params = EmailFormatParams(
+                    items=decision.params["items"],
+                    order_id=decision.params["order_id"]
+                )
+                
+                # Format the email message using validated parameters
                 message = self._format_order_email(
-                    decision.params["items"],
-                    decision.params["order_id"]
+                    email_params.items,
+                    email_params.order_id
                 )
                 
                 # Create and validate input model
@@ -294,16 +321,28 @@ class ActionLayer:
                                 )]
                             )
                         except Exception as e:
-                            raise ValueError(f"Error parsing email response: {str(e)}")
+                            error_response = ErrorResponse(
+                                error_type="ValidationError",
+                                message=f"Error parsing email response: {str(e)}",
+                                details={"response_content": result.content[0].text if result.content else None}
+                            )
+                            raise ValueError(error_response.model_dump_json())
                     else:
-                        raise ValueError("No response content received from email server")
+                        error_response = ErrorResponse(
+                            error_type="EmptyResponse",
+                            message="No response content received from email server"
+                        )
+                        raise ValueError(error_response.model_dump_json())
                 except Exception as e:
                     logger.error(f"Error sending email: {e}", exc_info=True)
                     # Ensure email_sent is False in memory if sending failed
                     self.memory.update_memory(email_sent=False)
                     return ToolResponse(
                         content=[TextContent(
-                            text=f"Failed to send email: {str(e)}"
+                            text=str(e) if isinstance(e, ValueError) else ErrorResponse(
+                                error_type="EmailError",
+                                message=f"Failed to send email: {str(e)}"
+                            ).model_dump_json()
                         )]
                     )
 
