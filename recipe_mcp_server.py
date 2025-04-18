@@ -1,7 +1,7 @@
 from mcp.server import FastMCP
 from mcp.types import TextContent
 from typing import Dict
-from models import GetRecipeInput, GetRecipeOutput
+from models import GetRecipeInput, GetRecipeOutput, ErrorResponse
 
 # Initialize the MCP server
 mcp = FastMCP("Recipe")
@@ -54,41 +54,63 @@ RECIPES = {
 }
 
 @mcp.tool()
-def get_recipe(input: GetRecipeInput) -> Dict:
+def get_recipe(input: GetRecipeInput) -> dict:
     """Get recipe and ingredients for a dish"""
-    dish_name = input.dish_name.lower()
-    
-    if dish_name not in RECIPES:
+    try:
+        dish_name = input.dish_name.lower()
+        
+        if dish_name not in RECIPES:
+            error = ErrorResponse(
+                error_type="RecipeNotFound",
+                message=f"Recipe for '{dish_name}' not found",
+                details={
+                    "requested_recipe": dish_name,
+                    "available_recipes": list(RECIPES.keys())
+                }
+            )
+            return {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": error.model_dump_json()
+                    }
+                ]
+            }
+        
+        recipe = RECIPES[dish_name]
+        
+        # Create and validate output model
+        output = GetRecipeOutput(
+            required_ingredients=recipe["ingredients"],
+            recipe_steps=recipe["steps"]
+        )
+        
+        # Return in MCP format with model data
         return {
             "content": [
-                TextContent(
-                    type="text",
-                    text=f"Recipe for '{dish_name}' not found"
-                )
+                {
+                    "type": "text",
+                    "text": output.model_dump_json()
+                }
             ]
         }
-    
-    recipe = RECIPES[dish_name]
-    output = GetRecipeOutput(
-        required_ingredients=recipe["ingredients"],
-        recipe_steps=recipe["steps"]
-    )
-    
-    # Format the recipe as a human-readable string
-    recipe_text = "Recipe found!\n\n"
-    recipe_text += "Required ingredients:\n"
-    recipe_text += "\n".join(f"- {ing}" for ing in output.required_ingredients)
-    recipe_text += "\n\nSteps:\n"
-    recipe_text += "\n".join(f"{i+1}. {step}" for i, step in enumerate(output.recipe_steps))
-    
-    return {
-        "content": [
-            TextContent(
-                type="text",
-                text=recipe_text
-            )
-        ]
-    }
+    except Exception as e:
+        error = ErrorResponse(
+            error_type="RecipeError",
+            message=f"Failed to get recipe: {str(e)}",
+            details={
+                "dish_name": input.dish_name if hasattr(input, 'dish_name') else None,
+                "error": str(e)
+            }
+        )
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": error.model_dump_json()
+                }
+            ]
+        }
 
 def main():
     mcp.run()

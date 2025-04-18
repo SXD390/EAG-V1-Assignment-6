@@ -79,68 +79,14 @@ class ActionLayer:
                 # Parse the response using Pydantic model
                 if hasattr(result, 'content') and result.content:
                     try:
-                        # First, get the text content from the MCP response
-                        recipe_text = result.content[0].text
-                        logger.debug(f"Raw recipe text: {recipe_text}")
+                        # First parse: Get the inner JSON string
+                        first_parse = json.loads(result.content[0].text)
                         
-                        # If the response is a JSON string, parse it
-                        try:
-                            if isinstance(recipe_text, str):
-                                recipe_data = json.loads(recipe_text)
-                                if isinstance(recipe_data, dict) and 'content' in recipe_data:
-                                    recipe_text = recipe_data['content'][0]['text']
-                        except json.JSONDecodeError:
-                            # If not JSON, use the text as is
-                            pass
+                        # Second parse: Parse the actual model data
+                        inner_json = json.loads(first_parse['content'][0]['text'])
                         
-                        logger.debug(f"Processed recipe text: {recipe_text}")
-                        
-                        # Parse the recipe text to extract ingredients and steps
-                        ingredients = []
-                        steps = []
-                        current_section = None
-                        
-                        for line in recipe_text.split('\n'):
-                            line = line.strip()
-                            if not line:  # Skip empty lines
-                                continue
-                            
-                            logger.debug(f"Processing line: {line}")
-                            
-                            if 'Required ingredients:' in line:
-                                current_section = 'ingredients'
-                                logger.debug("Switched to ingredients section")
-                                continue
-                            elif 'Steps:' in line:
-                                current_section = 'steps'
-                                logger.debug("Switched to steps section")
-                                continue
-                            
-                            if current_section == 'ingredients' and line.startswith('- '):
-                                ingredient = line[2:].strip()
-                                ingredients.append(ingredient)
-                                logger.debug(f"Added ingredient: {ingredient}")
-                            elif current_section == 'steps' and line[0].isdigit():
-                                step = line.split('. ', 1)[1].strip()
-                                steps.append(step)
-                                logger.debug(f"Added step: {step}")
-                        
-                        logger.debug(f"Extracted ingredients: {ingredients}")
-                        logger.debug(f"Extracted steps: {steps}")
-                        
-                        if not ingredients or not steps:
-                            error_response = ErrorResponse(
-                                error_type="ValidationError",
-                                message="Failed to extract ingredients or steps from recipe",
-                                details={"ingredients_found": bool(ingredients), "steps_found": bool(steps)}
-                            )
-                            raise ValueError(error_response.model_dump_json())
-                        
-                        # Create and validate the recipe output model
-                        recipe_output = GetRecipeOutput.model_validate({
-                            "required_ingredients": ingredients,
-                            "recipe_steps": steps
-                        })
+                        # Validate against GetRecipeOutput model
+                        recipe_output = GetRecipeOutput.model_validate(inner_json)
                         
                         # Update memory with recipe information
                         self.memory.update_memory(
@@ -149,7 +95,7 @@ class ActionLayer:
                         )
                         
                         # Format the recipe text for display
-                        display_text = "Recipe for Pasta Carbonara:\n\n"
+                        display_text = f"Recipe for {input_model.dish_name}:\n\n"
                         display_text += "Required ingredients:\n"
                         for ing in recipe_output.required_ingredients:
                             display_text += f"- {ing}\n"
@@ -163,11 +109,28 @@ class ActionLayer:
                                 text=display_text
                             )]
                         )
+                    except json.JSONDecodeError as je:
+                        logger.error(f"JSON decode error: {je}", exc_info=True)
+                        return ToolResponse(
+                            content=[TextContent(
+                                type="text",
+                                text=f"Error decoding recipe response: {str(je)}"
+                            )]
+                        )
+                    except pydantic.ValidationError as ve:
+                        logger.error(f"Validation error: {ve}", exc_info=True)
+                        return ToolResponse(
+                            content=[TextContent(
+                                type="text",
+                                text=f"Error validating recipe response: {str(ve)}"
+                            )]
+                        )
                     except Exception as e:
+                        logger.error(f"Error parsing recipe response: {e}", exc_info=True)
                         error_response = ErrorResponse(
                             error_type="ParseError",
                             message=f"Error parsing recipe response: {str(e)}",
-                            details={"raw_text": recipe_text if 'recipe_text' in locals() else None}
+                            details={"raw_text": result.content[0].text if result.content else None}
                         )
                         return ToolResponse(
                             content=[TextContent(
@@ -199,7 +162,14 @@ class ActionLayer:
                 # Parse the response using Pydantic model
                 if hasattr(result, 'content') and result.content:
                     try:
-                        comparison_output = CompareIngredientsOutput.model_validate_json(result.content[0].text)
+                        # First parse: Get the inner JSON string
+                        first_parse = json.loads(result.content[0].text)
+                        
+                        # Second parse: Parse the actual model data
+                        inner_json = json.loads(first_parse['content'][0]['text'])
+                        
+                        # Validate against CompareIngredientsOutput model
+                        comparison_output = CompareIngredientsOutput.model_validate(inner_json)
                         
                         # Update memory with missing ingredients
                         self.memory.update_memory(missing_ingredients=comparison_output.missing_ingredients)
@@ -214,6 +184,22 @@ class ActionLayer:
                             content=[TextContent(
                                 type="text",
                                 text=response_text
+                            )]
+                        )
+                    except json.JSONDecodeError as je:
+                        logger.error(f"JSON decode error: {je}", exc_info=True)
+                        return ToolResponse(
+                            content=[TextContent(
+                                type="text",
+                                text=f"Error decoding response: {str(je)}"
+                            )]
+                        )
+                    except pydantic.ValidationError as ve:
+                        logger.error(f"Validation error: {ve}", exc_info=True)
+                        return ToolResponse(
+                            content=[TextContent(
+                                type="text",
+                                text=f"Error validating response: {str(ve)}"
                             )]
                         )
                     except Exception as e:
@@ -245,7 +231,14 @@ class ActionLayer:
                 # Parse the response using Pydantic model
                 if hasattr(result, 'content') and result.content:
                     try:
-                        order_output = PlaceOrderOutput.model_validate_json(result.content[0].text)
+                        # First parse: Get the inner JSON string
+                        first_parse = json.loads(result.content[0].text)
+                        
+                        # Second parse: Parse the actual model data
+                        inner_json = json.loads(first_parse['content'][0]['text'])
+                        
+                        # Validate against PlaceOrderOutput model
+                        order_output = PlaceOrderOutput.model_validate(inner_json)
                         
                         # Update memory with order details
                         self.memory.update_memory(
@@ -258,10 +251,25 @@ class ActionLayer:
                                 text=f"Order placed successfully!\nOrder ID: {order_output.order_id}\nTotal: ${order_output.total:.2f}"
                             )]
                         )
-                    except Exception as e:
+                    except json.JSONDecodeError as je:
+                        logger.error(f"JSON decode error: {je}", exc_info=True)
                         return ToolResponse(
                             content=[TextContent(
-                                text=f"Error parsing order response: {str(e)}"
+                                text=f"Error decoding response: {str(je)}"
+                            )]
+                        )
+                    except pydantic.ValidationError as ve:
+                        logger.error(f"Validation error: {ve}", exc_info=True)
+                        return ToolResponse(
+                            content=[TextContent(
+                                text=f"Error validating response: {str(ve)}"
+                            )]
+                        )
+                    except Exception as e:
+                        logger.error(f"Error parsing order response: {e}", exc_info=True)
+                        return ToolResponse(
+                            content=[TextContent(
+                                text=f"Error placing order: {str(e)}"
                             )]
                         )
                 

@@ -6,7 +6,8 @@ import time
 from models import (
     CompareIngredientsInput, CompareIngredientsOutput,
     PlaceOrderInput, PlaceOrderOutput,
-    GetOrderStatusInput, GetOrderStatusOutput
+    GetOrderStatusInput, GetOrderStatusOutput,
+    ErrorResponse
 )
 
 # Initialize the MCP server
@@ -34,73 +35,162 @@ PRODUCTS = {
 ORDERS = {}
 
 @mcp.tool()
-def compare_ingredients(input: CompareIngredientsInput) -> CompareIngredientsOutput:
+def compare_ingredients(input: CompareIngredientsInput) -> dict:
     """Compare required ingredients against available ones and return missing ingredients"""
-    # Convert both lists to lowercase for case-insensitive comparison
-    required = set(item.lower() for item in input.required)
-    available = set(item.lower() for item in input.available)
-    
-    # Find missing ingredients (using set difference)
-    missing = list(required - available)
-    
-    # Sort the list for consistent output
-    missing.sort()
-    
-    # Return output model directly
-    return CompareIngredientsOutput(missing_ingredients=missing)
+    try:
+        # Convert both lists to lowercase for case-insensitive comparison
+        required = set(item.lower() for item in input.required)
+        available = set(item.lower() for item in input.available)
+        
+        # Find missing ingredients (using set difference)
+        missing = list(required - available)
+        
+        # Sort the list for consistent output
+        missing.sort()
+        
+        # Create and validate output model
+        output = CompareIngredientsOutput(missing_ingredients=missing)
+        
+        # Return in MCP format
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": output.model_dump_json()
+                }
+            ]
+        }
+    except Exception as e:
+        error = ErrorResponse(
+            error_type="ComparisonError",
+            message=f"Failed to compare ingredients: {str(e)}",
+            details={
+                "required": input.required,
+                "available": input.available
+            }
+        )
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": error.model_dump_json()
+                }
+            ]
+        }
 
 @mcp.tool()
-def place_order(input: PlaceOrderInput) -> PlaceOrderOutput:
+def place_order(input: PlaceOrderInput) -> dict:
     """Place an order for missing ingredients"""
-    items = [item.lower() for item in input.items]
-    
-    # Calculate total price
-    total = sum(PRODUCTS.get(item, 0) for item in items)
-    
-    # Generate order ID
-    order_id = str(uuid.uuid4())
-    
-    # Store order
-    ORDERS[order_id] = {
-        "items": items,
-        "total": total,
-        "status": "placed",
-        "timestamp": time.time()
-    }
-    
-    # Return output model directly
-    return PlaceOrderOutput(
-        order_id=order_id,
-        total=total,
-        order_placed=True
-    )
+    try:
+        items = [item.lower() for item in input.items]
+        
+        # Validate all items exist in product database
+        invalid_items = [item for item in items if item not in PRODUCTS]
+        if invalid_items:
+            raise ValueError(f"Invalid items: {', '.join(invalid_items)}")
+        
+        # Calculate total price
+        total = sum(PRODUCTS.get(item, 0) for item in items)
+        
+        # Generate order ID
+        order_id = str(uuid.uuid4())
+        
+        # Store order
+        ORDERS[order_id] = {
+            "items": items,
+            "total": total,
+            "status": "placed",
+            "timestamp": time.time()
+        }
+        
+        # Create and validate output model
+        output = PlaceOrderOutput(
+            order_id=order_id,
+            total=total,
+            order_placed=True
+        )
+        
+        # Return in MCP format
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": output.model_dump_json()
+                }
+            ]
+        }
+    except Exception as e:
+        error = ErrorResponse(
+            error_type="OrderError",
+            message=f"Failed to place order: {str(e)}",
+            details={
+                "items": input.items,
+                "valid_products": list(PRODUCTS.keys())
+            }
+        )
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": error.model_dump_json()
+                }
+            ]
+        }
 
 @mcp.tool()
-def get_order_status(input: GetOrderStatusInput) -> GetOrderStatusOutput:
+def get_order_status(input: GetOrderStatusInput) -> dict:
     """Get the status of an order"""
-    if input.order_id not in ORDERS:
-        raise ValueError(f"Order {input.order_id} not found")
-    
-    order = ORDERS[input.order_id]
-    
-    # Simulate order progress based on time
-    elapsed = time.time() - order["timestamp"]
-    if elapsed < 60:  # 1 minute
-        status = "processing"
-    elif elapsed < 120:  # 2 minutes
-        status = "out for delivery"
-    else:
-        status = "delivered"
-    
-    order["status"] = status
-    
-    # Return output model directly
-    return GetOrderStatusOutput(
-        order_id=input.order_id,
-        status=status,
-        items=order["items"],
-        total=order["total"]
-    )
+    try:
+        if input.order_id not in ORDERS:
+            raise ValueError(f"Order {input.order_id} not found")
+        
+        order = ORDERS[input.order_id]
+        
+        # Simulate order progress based on time
+        elapsed = time.time() - order["timestamp"]
+        if elapsed < 60:  # 1 minute
+            status = "processing"
+        elif elapsed < 120:  # 2 minutes
+            status = "out for delivery"
+        else:
+            status = "delivered"
+        
+        order["status"] = status
+        
+        # Create and validate output model
+        output = GetOrderStatusOutput(
+            order_id=input.order_id,
+            status=status,
+            items=order["items"],
+            total=order["total"]
+        )
+        
+        # Return in MCP format
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": output.model_dump_json()
+                }
+            ]
+        }
+    except Exception as e:
+        error = ErrorResponse(
+            error_type="StatusError",
+            message=f"Failed to get order status: {str(e)}",
+            details={
+                "order_id": input.order_id,
+                "exists": input.order_id in ORDERS
+            }
+        )
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": error.model_dump_json()
+                }
+            ]
+        }
 
 def main():
     mcp.run()
