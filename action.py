@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 import logging
 from mcp import ClientSession
-from decision import ActionType, Decision
+from decision import ActionType, Decision, ActionPlan
 from memory import MemoryLayer
 from pydantic import BaseModel
 from models import (
@@ -36,31 +36,31 @@ class ActionLayer:
         self.memory = memory_layer
         logger.debug(f"ActionLayer initialized with memory: {self.memory}")
 
-    async def execute(self, action_plan: Dict[str, Any]) -> ToolResponse:
+    async def execute(self, action_plan: ActionPlan) -> ToolResponse:
         """Execute the action plan from the decision layer"""
         logger.debug(f"Received action plan: {action_plan}")
         
-        if action_plan["type"] == "function_call":
-            logger.info(f"Processing function call: {action_plan['function']}")
+        if action_plan.type == "function_call":
+            logger.info(f"Processing function call: {action_plan.function}")
             # Convert function call format to Decision format
             decision = Decision(
-                action=ActionType(action_plan["function"]),
-                params=action_plan["parameters"]["input"],
+                action=ActionType(action_plan.function),
+                params=action_plan.parameters["input"],
                 reasoning="Executing function call",
-                fallback=action_plan.get("on_fail")
+                fallback=action_plan.on_fail
             )
             logger.debug(f"Created decision object: {decision}")
             return await self.execute_action(decision)
-        elif action_plan["type"] == "final_answer":
-            logger.info(f"Processing final answer: {action_plan['value']}")
+        elif action_plan.type == "final_answer":
+            logger.info(f"Processing final answer: {action_plan.value}")
             return ToolResponse(
                 content=[TextContent(
                     type="text",
-                    text=action_plan["value"]
+                    text=action_plan.value
                 )]
             )
         else:
-            logger.warning(f"Invalid action plan type: {action_plan['type']}")
+            logger.warning(f"Invalid action plan type: {action_plan.type}")
             return ToolResponse(
                 content=[TextContent(
                     type="text",
@@ -75,8 +75,8 @@ class ActionLayer:
         
         try:
             if decision.action == ActionType.FETCH_RECIPE:
-                # Create and validate input model
-                input_model = GetRecipeInput(dish_name=decision.params["dish_name"])
+                # Parameters are already validated as FetchRecipeParams
+                input_model = GetRecipeInput(dish_name=decision.params.dish_name)
                 
                 # Call tool with properly nested input
                 result = await self.recipe_session.call_tool(
@@ -193,10 +193,10 @@ class ActionLayer:
                 )
 
             elif decision.action == ActionType.CHECK_INGREDIENTS:
-                # Create and validate input model
+                # Parameters are already validated as CheckIngredientsParams
                 input_model = CompareIngredientsInput(
-                    required=decision.params["required"],
-                    available=decision.params["available"]
+                    required=decision.params.required,
+                    available=decision.params.available
                 )
                 
                 # Call tool with properly nested input
@@ -242,8 +242,8 @@ class ActionLayer:
                 )
 
             elif decision.action == ActionType.PLACE_ORDER:
-                # Create and validate input model
-                input_model = PlaceOrderInput(items=decision.params["items"])
+                # Parameters are already validated as PlaceOrderParams
+                input_model = PlaceOrderInput(items=decision.params.items)
                 
                 # Call tool with properly nested input
                 result = await self.delivery_session.call_tool(
@@ -281,10 +281,10 @@ class ActionLayer:
                 )
 
             elif decision.action == ActionType.SEND_EMAIL:
-                # Validate email format parameters
+                # Parameters are already validated as SendEmailParams
                 email_params = EmailFormatParams(
-                    items=decision.params["items"],
-                    order_id=decision.params["order_id"]
+                    items=decision.params.items,
+                    order_id=decision.params.order_id
                 )
                 
                 # Format the email message using validated parameters
@@ -295,7 +295,7 @@ class ActionLayer:
                 
                 # Create and validate input model
                 input_model = SendEmailInput(
-                    to=decision.params["email"],
+                    to=decision.params.email,
                     subject="Your Grocery Order Confirmation",
                     message=message
                 )
@@ -347,9 +347,10 @@ class ActionLayer:
                     )
 
             elif decision.action == ActionType.DISPLAY_RECIPE:
+                # Parameters are already validated as DisplayRecipeParams
                 return ToolResponse(
                     content=[TextContent(
-                        text="\n".join(decision.params["steps"])
+                        text="\n".join(decision.params.steps)
                     )]
                 )
 
@@ -361,6 +362,7 @@ class ActionLayer:
                 )
 
         except Exception as e:
+            logger.error(f"Error executing tool {decision.action.value}: {str(e)}", exc_info=True)
             return ToolResponse(
                 content=[TextContent(
                     text=f"Error executing tool {decision.action.value}: {str(e)}"
