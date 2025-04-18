@@ -4,7 +4,6 @@ from typing import Dict
 import uuid
 import time
 from models import (
-    CompareIngredientsInput, CompareIngredientsOutput,
     PlaceOrderInput, PlaceOrderOutput,
     GetOrderStatusInput, GetOrderStatusOutput,
     ErrorResponse
@@ -33,50 +32,6 @@ PRODUCTS = {
 
 # Simulated orders database
 ORDERS = {}
-
-@mcp.tool()
-def compare_ingredients(input: CompareIngredientsInput) -> dict:
-    """Compare required ingredients against available ones and return missing ingredients"""
-    try:
-        # Convert both lists to lowercase for case-insensitive comparison
-        required = set(item.lower() for item in input.required)
-        available = set(item.lower() for item in input.available)
-        
-        # Find missing ingredients (using set difference)
-        missing = list(required - available)
-        
-        # Sort the list for consistent output
-        missing.sort()
-        
-        # Create and validate output model
-        output = CompareIngredientsOutput(missing_ingredients=missing)
-        
-        # Return in MCP format
-        return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": output.model_dump_json()
-                }
-            ]
-        }
-    except Exception as e:
-        error = ErrorResponse(
-            error_type="ComparisonError",
-            message=f"Failed to compare ingredients: {str(e)}",
-            details={
-                "required": input.required,
-                "available": input.available
-            }
-        )
-        return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": error.model_dump_json()
-                }
-            ]
-        }
 
 @mcp.tool()
 def place_order(input: PlaceOrderInput) -> dict:

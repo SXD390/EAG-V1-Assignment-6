@@ -154,7 +154,7 @@ class ActionLayer:
                 )
                 
                 # Call tool with properly nested input
-                result = await self.delivery_session.call_tool(
+                result = await self.recipe_session.call_tool(
                     "compare_ingredients",
                     {"input": input_model.model_dump()}
                 )
