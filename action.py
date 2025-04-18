@@ -75,18 +75,84 @@ class ActionLayer:
                 # Parse the response using Pydantic model
                 if hasattr(result, 'content') and result.content:
                     try:
-                        recipe_output = GetRecipeOutput.model_validate_json(result.content[0].text)
+                        # First, get the text content from the MCP response
+                        recipe_text = result.content[0].text
+                        logger.debug(f"Raw recipe text: {recipe_text}")
+                        
+                        # If the response is a JSON string, parse it
+                        try:
+                            import json
+                            if isinstance(recipe_text, str):
+                                recipe_data = json.loads(recipe_text)
+                                if isinstance(recipe_data, dict) and 'content' in recipe_data:
+                                    recipe_text = recipe_data['content'][0]['text']
+                        except json.JSONDecodeError:
+                            # If not JSON, use the text as is
+                            pass
+                        
+                        logger.debug(f"Processed recipe text: {recipe_text}")
+                        
+                        # Parse the recipe text to extract ingredients and steps
+                        ingredients = []
+                        steps = []
+                        current_section = None
+                        
+                        for line in recipe_text.split('\n'):
+                            line = line.strip()
+                            if not line:  # Skip empty lines
+                                continue
+                            
+                            logger.debug(f"Processing line: {line}")
+                            
+                            if 'Required ingredients:' in line:
+                                current_section = 'ingredients'
+                                logger.debug("Switched to ingredients section")
+                                continue
+                            elif 'Steps:' in line:
+                                current_section = 'steps'
+                                logger.debug("Switched to steps section")
+                                continue
+                            
+                            if current_section == 'ingredients' and line.startswith('- '):
+                                ingredient = line[2:].strip()
+                                ingredients.append(ingredient)
+                                logger.debug(f"Added ingredient: {ingredient}")
+                            elif current_section == 'steps' and line[0].isdigit():
+                                step = line.split('. ', 1)[1].strip()
+                                steps.append(step)
+                                logger.debug(f"Added step: {step}")
+                        
+                        logger.debug(f"Extracted ingredients: {ingredients}")
+                        logger.debug(f"Extracted steps: {steps}")
+                        
+                        if not ingredients or not steps:
+                            raise ValueError("Failed to extract ingredients or steps from recipe")
+                        
+                        # Create the recipe output model
+                        recipe_output = GetRecipeOutput(
+                            required_ingredients=ingredients,
+                            recipe_steps=steps
+                        )
                         
                         # Update memory with recipe information
                         self.memory.update_memory(
-                            required_ingredients=recipe_output.ingredients,
-                            recipe_steps=recipe_output.steps
+                            required_ingredients=recipe_output.required_ingredients,
+                            recipe_steps=recipe_output.recipe_steps
                         )
+                        
+                        # Format the recipe text for display
+                        display_text = "Recipe for Pasta Carbonara:\n\n"
+                        display_text += "Required ingredients:\n"
+                        for ing in recipe_output.required_ingredients:
+                            display_text += f"- {ing}\n"
+                        display_text += "\nSteps:\n"
+                        for i, step in enumerate(recipe_output.recipe_steps, 1):
+                            display_text += f"{i}. {step}\n"
                         
                         return ToolResponse(
                             content=[TextContent(
                                 type="text",
-                                text=recipe_output.formatted_text
+                                text=display_text
                             )]
                         )
                     except Exception as e:

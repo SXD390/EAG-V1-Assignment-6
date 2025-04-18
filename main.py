@@ -360,6 +360,8 @@ async def main():
     logger.info("Starting main application...")
     main_start = time.time()
     assistant = None
+    max_iterations = 50  # Cap the number of iterations
+    current_iteration = 0  # Track current iteration
 
     try:
         # Initialize assistant
@@ -375,9 +377,10 @@ async def main():
             "user_email": "sudarshanravi13@gmail.com"
         }
         
-        # Process input until recipe is ready to be displayed
-        while True:
-            logger.info("Processing next step...")
+        # Process input until recipe is ready to be displayed or max iterations reached
+        while current_iteration < max_iterations:
+            print(f"\n{'='*20} Iteration {current_iteration + 1} {'='*20}")
+            logger.info(f"Processing step {current_iteration + 1}/{max_iterations}...")
             result = await assistant.process_input(user_input)
             print(result)
             
@@ -390,7 +393,6 @@ async def main():
                 if memory.required_ingredients and not memory.missing_ingredients:
                     # We have required ingredients but haven't compared yet
                     logger.info("Required ingredients found, proceeding with comparison")
-                    continue
                 elif memory.missing_ingredients:
                     if memory.order_placed and memory.email_sent:
                         # We have missing ingredients but order is placed and email sent
@@ -399,12 +401,18 @@ async def main():
                     else:
                         # Still need to place order or send email
                         logger.info("Processing order and email steps")
-                        continue
                 elif memory.required_ingredients and memory.missing_ingredients == []:
                     # We've done the comparison and found no missing ingredients
                     logger.info("No missing ingredients after comparison, recipe ready to display")
                     break
             
+            # Increment iteration counter
+            current_iteration += 1
+            if current_iteration >= max_iterations:
+                logger.warning(f"Reached maximum iterations ({max_iterations}), stopping execution")
+                break
+            
+            print(f"{'='*20} End of iteration {current_iteration} {'='*20}\n")
             # Add a small delay to prevent throttling
             await asyncio.sleep(1)
 
