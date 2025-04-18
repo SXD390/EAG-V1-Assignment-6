@@ -49,7 +49,7 @@ class SendEmailInput(BaseModel):
 
 class SendEmailOutput(BaseModel):
     """Output model for send_email tool"""
-    message_id: str
+    message_id: str  # Only message_id is required for email confirmation
 
 class GetOrderStatusInput(BaseModel):
     """Input model for get_order_status tool"""

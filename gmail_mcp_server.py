@@ -8,7 +8,8 @@ import os.path
 import base64
 from email.mime.text import MIMEText
 import argparse
-from models import SendEmailInput, SendEmailOutput
+import json
+from models import SendEmailInput, SendEmailOutput, ErrorResponse, ToolResponse
 
 # Initialize the MCP server
 mcp = FastMCP("Gmail")
@@ -45,15 +46,27 @@ def get_gmail_service(creds_file_path: str, token_path: str):
         return None
 
 @mcp.tool()
-def send_email(input: SendEmailInput) -> SendEmailOutput:
+def send_email(input: SendEmailInput) -> dict:
     """Send an email using Gmail API"""
     try:
         service = mcp.state.get('gmail_service')
         if not service:
-            raise ValueError("Gmail service not initialized")
+            error = ErrorResponse(
+                error_type="ServiceError",
+                message="Gmail service not initialized",
+                details={"service_available": False}
+            )
+            return {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": error.model_dump_json()
+                    }
+                ]
+            }
 
         # Create message
-        message = MIMEText(input.message)
+        message = MIMEText(input.message, 'html')  # Set type to HTML
         message['to'] = input.to
         message['subject'] = input.subject
 
@@ -68,15 +81,40 @@ def send_email(input: SendEmailInput) -> SendEmailOutput:
 
         print(f"Email sent successfully. Message Id: {send_message['id']}")
 
-        # Return the output model directly
-        return SendEmailOutput(
-            message_id=send_message['id'],
-            email_sent=True
-        )
+        # Create and validate output model
+        output = SendEmailOutput(message_id=send_message['id'])
+        json_response = output.model_dump_json()
+        
+        # Return in MCP format with validated model data as JSON string
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": json_response
+                }
+            ]
+        }
 
     except Exception as e:
         print(f"Error sending email: {str(e)}")
-        raise ValueError(f"Failed to send email: {str(e)}")
+        error = ErrorResponse(
+            error_type="EmailError",
+            message=f"Failed to send email: {str(e)}",
+            details={
+                "service_available": bool(mcp.state.get('gmail_service')),
+                "to": input.to,
+                "subject": input.subject
+            }
+        )
+        error_json = error.model_dump_json()
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": error_json
+                }
+            ]
+        }
 
 def main():
     parser = argparse.ArgumentParser()

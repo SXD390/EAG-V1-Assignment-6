@@ -11,6 +11,8 @@ from models import (
     ActionType, Decision, ActionPlan,
     EmailFormatParams, ErrorResponse
 )
+import pydantic
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -83,7 +85,6 @@ class ActionLayer:
                         
                         # If the response is a JSON string, parse it
                         try:
-                            import json
                             if isinstance(recipe_text, str):
                                 recipe_data = json.loads(recipe_text)
                                 if isinstance(recipe_data, dict) and 'content' in recipe_data:
@@ -300,29 +301,46 @@ class ActionLayer:
                     # Parse the response using Pydantic model
                     if hasattr(result, 'content') and result.content:
                         try:
-                            email_output = SendEmailOutput.model_validate_json(result.content[0].text)
-                            
-                            # Update memory after successful email send
-                            self.memory.update_memory(email_sent=True)
-                            
-                            return ToolResponse(
-                                content=[TextContent(
-                                    text=f"Email sent successfully to {input_model.to}\nMessage ID: {email_output.message_id}"
-                                )]
-                            )
+                            # Extract the inner JSON content (double-nested)
+                            try:
+                                # First parse to get the inner content
+                                first_parse = json.loads(result.content[0].text)
+                                
+                                if isinstance(first_parse, dict) and 'content' in first_parse:
+                                    # Get the text content from the inner structure
+                                    inner_text = first_parse['content'][0]['text']
+                                    # Parse the actual model data
+                                    inner_json = json.loads(inner_text)
+                                else:
+                                    # If not nested, use the first parse
+                                    inner_json = first_parse
+                                
+                                # Validate against SendEmailOutput model
+                                email_output = SendEmailOutput.model_validate(inner_json)
+                                
+                                # Update memory after successful email send
+                                self.memory.update_memory(email_sent=True)
+                                
+                                return ToolResponse(
+                                    content=[TextContent(
+                                        text=f"Email sent successfully to {input_model.to}\nMessage ID: {email_output.message_id}"
+                                    )]
+                                )
+                            except json.JSONDecodeError as je:
+                                raise
+                            except pydantic.ValidationError as ve:
+                                # If not a SendEmailOutput, try parsing as ErrorResponse
+                                error_response = ErrorResponse.model_validate(inner_json)
+                                raise ValueError(error_response.model_dump_json())
+                                
                         except Exception as e:
+                            logger.error(f"Error sending email: {e}", exc_info=True)
                             error_response = ErrorResponse(
                                 error_type="ValidationError",
                                 message=f"Error parsing email response: {str(e)}",
                                 details={"response_content": result.content[0].text if result.content else None}
                             )
                             raise ValueError(error_response.model_dump_json())
-                    else:
-                        error_response = ErrorResponse(
-                            error_type="EmptyResponse",
-                            message="No response content received from email server"
-                        )
-                        raise ValueError(error_response.model_dump_json())
                 except Exception as e:
                     logger.error(f"Error sending email: {e}", exc_info=True)
                     # Ensure email_sent is False in memory if sending failed
@@ -360,15 +378,54 @@ class ActionLayer:
             )
 
     def _format_order_email(self, items: list, order_id: str) -> str:
-        """Format the order confirmation email"""
-        items_list = "\n".join([f"- {item}" for item in items])
+        """Format the order confirmation email with beautiful HTML"""
+        items_list = "\n".join([f"<li style='margin: 8px 0;'>{item}</li>" for item in items])
+        
         return f"""
-        Your grocery order has been placed!
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <!-- Header Banner -->
+        <div style="background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
+            <h1 style="color: white; margin: 0; font-size: 28px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">🎉 Order Confirmed! 🎉</h1>
+        </div>
 
-        Order ID: {order_id}
+        <!-- Order Details -->
+        <div style="background-color: #FFFFFF; border-radius: 10px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 20px;">
+            <h2 style="color: #2D3748; margin-top: 0; font-size: 20px; border-bottom: 2px solid #FF6B6B; padding-bottom: 10px;">Order Details</h2>
+            <p style="color: #4A5568; margin: 15px 0;">
+                <strong>Order ID:</strong> 
+                <span style="background-color: #F7FAFC; padding: 5px 10px; border-radius: 5px; font-family: monospace;">{order_id}</span>
+            </p>
+        </div>
 
-        Items ordered:
-        {items_list}
+        <!-- Items List -->
+        <div style="background-color: #FFFFFF; border-radius: 10px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 20px;">
+            <h2 style="color: #2D3748; margin-top: 0; font-size: 20px; border-bottom: 2px solid #FF6B6B; padding-bottom: 10px;">Your Ingredients</h2>
+            <ul style="list-style-type: none; padding-left: 0; color: #4A5568;">
+                {items_list}
+            </ul>
+        </div>
 
-        Your items will be delivered soon. Happy cooking!
-        """ 
+        <!-- Delivery Info -->
+        <div style="background-color: #FFFFFF; border-radius: 10px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 20px;">
+            <h2 style="color: #2D3748; margin-top: 0; font-size: 20px; border-bottom: 2px solid #FF6B6B; padding-bottom: 10px;">Delivery Information</h2>
+            <p style="color: #4A5568; margin: 15px 0;">
+                Your ingredients will be delivered soon. We'll make sure everything arrives fresh and ready for your cooking adventure!
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 30px; padding: 20px; color: #718096;">
+            <p style="margin: 5px 0;">Happy Cooking! 👨‍🍳</p>
+            <p style="margin: 5px 0; font-size: 12px;">This is an automated email, please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>
+""" 
