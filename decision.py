@@ -1,78 +1,14 @@
-from enum import Enum
-from typing import Optional, Dict, Any, List, Union, Literal
-from pydantic import BaseModel, Field
-from memory import AgentMemory
 import logging
+from models import (
+    ActionType, Decision, ActionPlan, DecisionContext,
+    FetchRecipeParams, CheckIngredientsParams, PlaceOrderParams,
+    SendEmailParams, DisplayRecipeParams, InvalidInputParams,
+    AgentMemory
+)
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-class ActionType(Enum):
-    FETCH_RECIPE = "fetch_recipe"
-    CHECK_INGREDIENTS = "check_ingredients"
-    PLACE_ORDER = "place_order"
-    SEND_EMAIL = "send_email"
-    DISPLAY_RECIPE = "display_recipe"
-    INVALID_INPUT = "invalid_input"
-
-# Parameter models for each action type
-class FetchRecipeParams(BaseModel):
-    dish_name: str
-
-class CheckIngredientsParams(BaseModel):
-    required: List[str]
-    available: List[str]
-
-class PlaceOrderParams(BaseModel):
-    items: List[str]
-
-class SendEmailParams(BaseModel):
-    email: str
-    order_id: str
-    items: List[str]
-
-class DisplayRecipeParams(BaseModel):
-    steps: List[str]
-
-class InvalidInputParams(BaseModel):
-    message: Optional[str] = None
-
-ActionParams = Union[
-    FetchRecipeParams,
-    CheckIngredientsParams,
-    PlaceOrderParams,
-    SendEmailParams,
-    DisplayRecipeParams,
-    InvalidInputParams
-]
-
-class Decision(BaseModel):
-    """Model representing a decision about next action"""
-    action: ActionType
-    params: ActionParams
-    reasoning: str
-    fallback: Optional[str] = None
-
-    def get_parameters_dict(self) -> Dict[str, Any]:
-        """Convert params to a dictionary format expected by the action layer"""
-        if isinstance(self.params, (FetchRecipeParams, CheckIngredientsParams, 
-                                  PlaceOrderParams, SendEmailParams, 
-                                  DisplayRecipeParams, InvalidInputParams)):
-            return self.params.model_dump()
-        return {}
-
-class ActionPlan(BaseModel):
-    """Model representing the final action plan"""
-    type: Literal["function_call"] = "function_call"
-    function: str
-    parameters: Dict[str, Dict[str, Any]]
-    on_fail: str
-
-class DecisionContext(BaseModel):
-    """Model representing the input context for decision making"""
-    current_state: Dict[str, Any]
-    system_prompt: str
 
 class DecisionLayer:
     def __init__(self):

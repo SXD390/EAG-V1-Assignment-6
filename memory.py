@@ -1,76 +1,12 @@
-from pydantic import BaseModel, Field, EmailStr, constr
-from typing import List, Optional, Dict, Any
+from typing import Dict, Any, Optional
+import logging
 import json
 import os
-import logging
+from models import AgentMemory, MemoryError, UserIntent
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-class MemoryError(BaseModel):
-    """Model for standardized memory error responses"""
-    error_type: str = Field(..., description="Type of error encountered")
-    message: str = Field(..., description="Error message")
-    details: Dict[str, Any] = Field(default_factory=dict, description="Additional error details")
-
-class AgentMemory(BaseModel):
-    """Model representing agent's memory state"""
-    dish_name: constr(min_length=1, max_length=100) = Field(
-        "", 
-        description="Name of the dish to cook"
-    )
-    pantry_items: List[constr(min_length=1, max_length=50)] = Field(
-        default_factory=list, 
-        description="Ingredients user has",
-        max_items=50
-    )
-    required_ingredients: List[constr(min_length=1, max_length=50)] = Field(
-        default_factory=list, 
-        description="Ingredients required for the dish",
-        max_items=50
-    )
-    missing_ingredients: List[constr(min_length=1, max_length=50)] = Field(
-        default_factory=list, 
-        description="Ingredients that need to be ordered",
-        max_items=50
-    )
-    recipe_steps: List[constr(min_length=1, max_length=500)] = Field(
-        default_factory=list, 
-        description="Steps to cook the dish",
-        max_items=50
-    )
-    order_placed: bool = Field(
-        False, 
-        description="Whether ingredients order has been placed"
-    )
-    order_id: Optional[constr(min_length=1, max_length=100)] = Field(
-        None, 
-        description="ID of the placed order"
-    )
-    email_sent: bool = Field(
-        False, 
-        description="Whether confirmation email was sent"
-    )
-    user_email: EmailStr = Field(
-        "", 
-        description="User's email for notifications"
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "dish_name": "pasta carbonara",
-                "pantry_items": ["eggs", "cheese"],
-                "required_ingredients": ["eggs", "cheese", "pasta"],
-                "missing_ingredients": ["pasta"],
-                "recipe_steps": ["Step 1: Boil water", "Step 2: Cook pasta"],
-                "order_placed": True,
-                "order_id": "123456",
-                "email_sent": True,
-                "user_email": "user@example.com"
-            }
-        }
 
 class MemoryLayer:
     def __init__(self, memory_file: str = "agent_memory.json", persist_to_disk: bool = True):

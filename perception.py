@@ -1,50 +1,10 @@
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Dict, Any
+from typing import Dict, Any
 import logging
+from models import UserIntent, PerceptionError, RawUserInput
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-class RawUserInput(BaseModel):
-    """Model for validating web form or user input"""
-    dish_name: str | None = Field(
-        None, 
-        min_length=1, 
-        max_length=100,
-        description="Name of the dish to cook"
-    )
-    pantry_items: List[str] | None = Field(
-        None,
-        min_items=0,
-        max_items=50,
-        description="List of ingredients available in pantry"
-    )
-    user_email: EmailStr | None = Field(
-        None,
-        description="User's email for order notifications"
-    )
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "dish_name": "pasta carbonara",
-                "pantry_items": ["eggs", "cheese", "pepper"],
-                "user_email": "user@example.com"
-            }
-        }
-
-class UserIntent(BaseModel):
-    """Model representing parsed user input"""
-    dish_name: str = Field(..., description="Name of the dish user wants to cook")
-    pantry_items: List[str] = Field(default_factory=list, description="List of ingredients user has")
-    user_email: EmailStr = Field(..., description="User's email for notifications")
-
-class PerceptionError(BaseModel):
-    """Model for standardized error responses"""
-    error_type: str = Field(..., description="Type of error encountered")
-    message: str = Field(..., description="Error message")
-    input_data: Dict[str, Any] = Field(default_factory=dict, description="Raw input that caused the error")
 
 class PerceptionLayer:
     def __init__(self):

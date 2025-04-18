@@ -1,31 +1,21 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 import logging
 from mcp import ClientSession
-from decision import ActionType, Decision, ActionPlan
 from memory import MemoryLayer
-from pydantic import BaseModel
 from models import (
     GetRecipeInput, GetRecipeOutput,
     CompareIngredientsInput, CompareIngredientsOutput,
     PlaceOrderInput, PlaceOrderOutput,
     SendEmailInput, SendEmailOutput,
-    TextContent, ToolResponse
+    TextContent, ToolResponse,
+    ActionType, Decision, ActionPlan,
+    EmailFormatParams, ErrorResponse
 )
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-class EmailFormatParams(BaseModel):
-    """Model for email formatting parameters"""
-    items: List[str]
-    order_id: str
-
-class ErrorResponse(BaseModel):
-    """Model for standardized error responses"""
-    error_type: str
-    message: str
-    details: Dict[str, Any] = {}
 
 class ActionLayer:
     def __init__(self, recipe_session: ClientSession, delivery_session: ClientSession, gmail_session: ClientSession, memory_layer: MemoryLayer):
