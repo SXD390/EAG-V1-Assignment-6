@@ -54,6 +54,251 @@ RECIPES = {
             "Simmer for 20 minutes",
             "Serve over cooked rice"
         ]
+    },
+    "beef stir fry": {
+        "ingredients": [
+            "beef sirloin",
+            "broccoli",
+            "carrots",
+            "bell peppers",
+            "soy sauce",
+            "garlic",
+            "ginger",
+            "vegetable oil",
+            "cornstarch",
+            "rice"
+        ],
+        "steps": [
+            "Slice beef into thin strips",
+            "Cut vegetables into bite-sized pieces",
+            "Mix soy sauce and cornstarch for sauce",
+            "Heat oil in a wok or large pan",
+            "Stir-fry beef until browned",
+            "Remove beef and set aside",
+            "Stir-fry vegetables until crisp-tender",
+            "Add back beef and sauce",
+            "Cook until sauce thickens",
+            "Serve over rice"
+        ]
+    },
+    "mushroom risotto": {
+        "ingredients": [
+            "arborio rice",
+            "mushrooms",
+            "onion",
+            "garlic",
+            "white wine",
+            "vegetable broth",
+            "parmesan cheese",
+            "butter",
+            "olive oil",
+            "thyme"
+        ],
+        "steps": [
+            "Sauté mushrooms in butter until golden",
+            "Remove mushrooms and set aside",
+            "Sauté onion and garlic in olive oil",
+            "Add rice and toast for 2 minutes",
+            "Add wine and stir until absorbed",
+            "Add hot broth gradually, stirring constantly",
+            "Cook until rice is creamy and al dente",
+            "Stir in mushrooms and parmesan",
+            "Season with thyme and serve hot"
+        ]
+    },
+    "fish tacos": {
+        "ingredients": [
+            "white fish fillets",
+            "lime",
+            "tortillas",
+            "cabbage",
+            "cilantro",
+            "sour cream",
+            "avocado",
+            "chili powder",
+            "cumin",
+            "garlic powder"
+        ],
+        "steps": [
+            "Season fish with spices",
+            "Cook fish until flaky",
+            "Warm tortillas",
+            "Shred cabbage and chop cilantro",
+            "Slice avocado",
+            "Mix sour cream with lime juice",
+            "Assemble tacos with fish and toppings",
+            "Serve with lime wedges"
+        ]
+    },
+    "vegetable lasagna": {
+        "ingredients": [
+            "lasagna noodles",
+            "zucchini",
+            "spinach",
+            "ricotta cheese",
+            "mozzarella cheese",
+            "marinara sauce",
+            "garlic",
+            "onion",
+            "basil",
+            "olive oil"
+        ],
+        "steps": [
+            "Cook lasagna noodles",
+            "Sauté zucchini, garlic, and onion",
+            "Wilt spinach",
+            "Mix ricotta with basil",
+            "Layer: sauce, noodles, vegetables, cheese",
+            "Repeat layers",
+            "Top with mozzarella",
+            "Bake until bubbly and golden",
+            "Let rest before serving"
+        ]
+    },
+    "chicken fajitas": {
+        "ingredients": [
+            "chicken breast",
+            "bell peppers",
+            "onion",
+            "tortillas",
+            "lime",
+            "cumin",
+            "chili powder",
+            "garlic",
+            "olive oil",
+            "sour cream"
+        ],
+        "steps": [
+            "Slice chicken and vegetables",
+            "Season chicken with spices",
+            "Heat oil in a large skillet",
+            "Cook chicken until done",
+            "Sauté peppers and onions",
+            "Warm tortillas",
+            "Serve with lime and sour cream",
+            "Let everyone assemble their own fajitas"
+        ]
+    },
+    "shrimp scampi": {
+        "ingredients": [
+            "shrimp",
+            "linguine",
+            "garlic",
+            "white wine",
+            "lemon",
+            "butter",
+            "olive oil",
+            "parsley",
+            "red pepper flakes",
+            "salt"
+        ],
+        "steps": [
+            "Cook linguine according to package",
+            "Sauté garlic in olive oil and butter",
+            "Add shrimp and cook until pink",
+            "Add wine and lemon juice",
+            "Simmer until sauce reduces",
+            "Toss with pasta",
+            "Add parsley and red pepper flakes",
+            "Serve immediately"
+        ]
+    },
+    "thai green curry": {
+        "ingredients": [
+            "green curry paste",
+            "coconut milk",
+            "chicken thighs",
+            "bamboo shoots",
+            "bell peppers",
+            "fish sauce",
+            "palm sugar",
+            "thai basil",
+            "lime leaves",
+            "rice"
+        ],
+        "steps": [
+            "Cook curry paste in coconut milk",
+            "Add chicken and simmer",
+            "Add vegetables",
+            "Season with fish sauce and palm sugar",
+            "Add lime leaves",
+            "Cook until chicken is done",
+            "Stir in thai basil",
+            "Serve over rice"
+        ]
+    },
+    "beef bourguignon": {
+        "ingredients": [
+            "beef chuck",
+            "bacon",
+            "red wine",
+            "pearl onions",
+            "mushrooms",
+            "carrots",
+            "beef broth",
+            "thyme",
+            "bay leaves",
+            "butter"
+        ],
+        "steps": [
+            "Brown bacon and set aside",
+            "Brown beef in batches",
+            "Sauté vegetables",
+            "Add wine and reduce",
+            "Add broth and herbs",
+            "Simmer until beef is tender",
+            "Add mushrooms and pearl onions",
+            "Cook until vegetables are tender",
+            "Serve with crusty bread"
+        ]
+    },
+    "eggplant parmesan": {
+        "ingredients": [
+            "eggplant",
+            "breadcrumbs",
+            "eggs",
+            "mozzarella cheese",
+            "parmesan cheese",
+            "marinara sauce",
+            "basil",
+            "olive oil",
+            "garlic",
+            "salt"
+        ],
+        "steps": [
+            "Slice and salt eggplant",
+            "Dip in egg then breadcrumbs",
+            "Fry until golden brown",
+            "Layer: sauce, eggplant, cheese",
+            "Repeat layers",
+            "Top with remaining cheese",
+            "Bake until bubbly",
+            "Garnish with fresh basil"
+        ]
+    },
+    "lemon herb salmon": {
+        "ingredients": [
+            "salmon fillets",
+            "lemon",
+            "garlic",
+            "dill",
+            "parsley",
+            "olive oil",
+            "butter",
+            "capers",
+            "salt",
+            "pepper"
+        ],
+        "steps": [
+            "Preheat oven to 400°F",
+            "Mix herbs, garlic, and oil",
+            "Season salmon with salt and pepper",
+            "Spread herb mixture on salmon",
+            "Add lemon slices and capers",
+            "Bake until salmon flakes easily",
+            "Drizzle with melted butter",
+            "Serve with extra lemon"
+        ]
     }
 }
 

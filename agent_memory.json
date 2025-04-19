@@ -1,1 +1,44 @@
-{}
+{
+  "dish_name": "mushroom risotto",
+  "pantry_items": [
+    "arborio rice",
+    "mushrooms",
+    "onion",
+    "garlic"
+  ],
+  "required_ingredients": [
+    "arborio rice",
+    "mushrooms",
+    "onion",
+    "garlic",
+    "white wine",
+    "vegetable broth",
+    "parmesan cheese",
+    "butter",
+    "olive oil",
+    "thyme"
+  ],
+  "missing_ingredients": [
+    "butter",
+    "olive oil",
+    "parmesan cheese",
+    "thyme",
+    "vegetable broth",
+    "white wine"
+  ],
+  "recipe_steps": [
+    "Saut\u00e9 mushrooms in butter until golden",
+    "Remove mushrooms and set aside",
+    "Saut\u00e9 onion and garlic in olive oil",
+    "Add rice and toast for 2 minutes",
+    "Add wine and stir until absorbed",
+    "Add hot broth gradually, stirring constantly",
+    "Cook until rice is creamy and al dente",
+    "Stir in mushrooms and parmesan",
+    "Season with thyme and serve hot"
+  ],
+  "order_placed": true,
+  "order_id": "c4f770b0-74b1-48a8-8aab-0b8dacee3170",
+  "email_sent": false,
+  "user_email": "sudarshanravi13@gmail.com"
+}

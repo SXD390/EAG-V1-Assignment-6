@@ -11,11 +11,13 @@ from perception import PerceptionLayer
 from memory import MemoryLayer
 from decision import DecisionLayer
 from action import ActionLayer
+from typing import Optional
+from models import ActionPlan
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     datefmt='%H:%M:%S'
 )
 logger = logging.getLogger(__name__)
@@ -213,7 +215,7 @@ Remember:
 
         # Create MCP server connections
         logger.info("Establishing connections to MCP servers...")
-        
+    
         recipe_params = StdioServerParameters(
             command="python",
             args=["recipe_mcp_server.py"]
@@ -355,78 +357,138 @@ Remember:
             logger.error(f"Error in input processing after {time.time() - process_start:.2f}s: {e}")
             raise
 
+async def process_input(perception: PerceptionLayer, memory: MemoryLayer, decision: DecisionLayer, action: ActionLayer) -> Optional[str]:
+    logger.debug("Starting process_input")
+    
+    # Get user input based on current memory state
+    if not memory.memory.dish_name:  # Access dish_name through memory.memory
+        dish_name = await perception.get_dish_name()
+        if dish_name:
+            memory.update_memory(dish_name=dish_name)
+            logger.debug(f"Updated memory with dish name: {dish_name}")
+    
+    if memory.memory.dish_name and not memory.memory.required_ingredients:
+        # Get recipe and ingredients
+        recipe_decision = decision.decide_next_action(memory.memory)  # Remove await
+        if recipe_decision:
+            # Convert Decision to ActionPlan
+            action_plan = ActionPlan(
+                type="function_call",
+                function=recipe_decision.action.value,
+                parameters={"input": recipe_decision.params.model_dump()},
+                on_fail=recipe_decision.fallback or f"Retry {recipe_decision.action.value} with modified parameters"
+            )
+            recipe_result = await action.execute(action_plan)
+            if recipe_result and recipe_result.content:
+                logger.debug(f"Recipe result: {recipe_result.content}")
+                return recipe_result.content
+    
+    if memory.memory.required_ingredients and not memory.memory.pantry_items:
+        # Get pantry items
+        pantry_items = await perception.get_pantry_items(memory.memory.required_ingredients)
+        if pantry_items:
+            memory.update_memory(pantry_items=pantry_items)
+            logger.debug(f"Updated memory with pantry items: {pantry_items}")
+    
+    if memory.memory.pantry_items and not memory.memory.missing_ingredients:
+        # Compare ingredients
+        compare_decision = decision.decide_next_action(memory.memory)  # Remove await
+        if compare_decision:
+            # Convert Decision to ActionPlan
+            action_plan = ActionPlan(
+                type="function_call",
+                function=compare_decision.action.value,
+                parameters={"input": compare_decision.params.model_dump()},
+                on_fail=compare_decision.fallback or f"Retry {compare_decision.action.value} with modified parameters"
+            )
+            compare_result = await action.execute(action_plan)
+            if compare_result and compare_result.content:
+                logger.debug(f"Compare result: {compare_result.content}")
+                return compare_result.content
+    
+    if memory.memory.missing_ingredients and not memory.memory.user_email:
+        # Get user email
+        email = await perception.get_email()
+        if email:
+            memory.update_memory(user_email=email)
+            logger.debug(f"Updated memory with email: {email}")
+    
+    if memory.memory.user_email and memory.memory.missing_ingredients:
+        # Place order
+        order_decision = decision.decide_next_action(memory.memory)  # Remove await
+        if order_decision:
+            # Convert Decision to ActionPlan
+            action_plan = ActionPlan(
+                type="function_call",
+                function=order_decision.action.value,
+                parameters={"input": order_decision.params.model_dump()},
+                on_fail=order_decision.fallback or f"Retry {order_decision.action.value} with modified parameters"
+            )
+            order_result = await action.execute(action_plan)
+            if order_result and order_result.content:
+                logger.debug(f"Order result: {order_result.content}")
+                return order_result.content
+    
+    return None
+
 async def main():
-    """Main entry point"""
-    logger.info("Starting main application...")
-    main_start = time.time()
-    assistant = None
-    max_iterations = 50  # Cap the number of iterations
-    current_iteration = 0  # Track current iteration
+    logger.debug("Starting main")
+    
+    # Initialize components with MCP sessions
+    recipe_params = StdioServerParameters(
+        command="python",
+        args=["recipe_mcp_server.py"]
+    )
+    delivery_params = StdioServerParameters(
+        command="python",
+        args=["delivery_mcp_server.py"]
+    )
+    gmail_params = StdioServerParameters(
+        command="python",
+        args=["gmail_mcp_server.py", "--creds-file-path", "credentials.json", "--token-path", "token.json"]
+    )
 
-    try:
-        # Initialize assistant
-        assistant = GroceryAssistant()
-        logger.info("Setting up assistant...")
-        await assistant.setup()
-        logger.info("Assistant setup complete")
-
-        # Initial user input
-        user_input = {
-            "dish_name": "pasta carbonara",
-            "pantry_items": ["eggs"],
-            "user_email": "sudarshanravi13@gmail.com"
-        }
+    async with stdio_client(recipe_params) as recipe_io, \
+               stdio_client(delivery_params) as delivery_io, \
+               stdio_client(gmail_params) as gmail_io:
         
-        # Process input until recipe is ready to be displayed or max iterations reached
-        while current_iteration < max_iterations:
-            print(f"\n{'='*20} Iteration {current_iteration + 1} {'='*20}")
-            logger.info(f"Processing step {current_iteration + 1}/{max_iterations}...")
-            result = await assistant.process_input(user_input)
-            print(result)
+        async with ClientSession(*recipe_io) as recipe_session, \
+                   ClientSession(*delivery_io) as delivery_session, \
+                   ClientSession(*gmail_io) as gmail_session:
             
-            # Get current memory state
-            memory = assistant.memory.get_memory()
-            logger.debug(f"Current memory state: {memory}")
+            await recipe_session.initialize()
+            await delivery_session.initialize()
+            await gmail_session.initialize()
             
-            # Check if we have completed all necessary steps
-            if memory.recipe_steps:  # We have the recipe
-                if memory.required_ingredients and not memory.missing_ingredients:
-                    # We have required ingredients but haven't compared yet
-                    logger.info("Required ingredients found, proceeding with comparison")
-                elif memory.missing_ingredients:
-                    if memory.order_placed and memory.email_sent:
-                        # We have missing ingredients but order is placed and email sent
-                        logger.info("Order placed and confirmed, recipe ready to display")
-                        break
-                    else:
-                        # Still need to place order or send email
-                        logger.info("Processing order and email steps")
-                elif memory.required_ingredients and memory.missing_ingredients == []:
-                    # We've done the comparison and found no missing ingredients
-                    logger.info("No missing ingredients after comparison, recipe ready to display")
+            memory = MemoryLayer()
+            perception = PerceptionLayer()
+            decision = DecisionLayer()  # Removed memory parameter
+            action = ActionLayer(recipe_session, delivery_session, gmail_session, memory)
+            
+            iteration = 0
+            max_iterations = 50
+            
+            while iteration < max_iterations:
+                logger.debug("="*50 + f" Starting iteration {iteration+1} " + "="*50 + "\n")
+                logger.debug(f"Current memory state: {memory}")
+                
+                result = await process_input(perception, memory, decision, action)
+                if result:
+                    print(result)
+                logger.debug("="*50 + f"Iteration {iteration+1} complete " + "="*50 + "\n")
+
+                # Check if we're done - wait for both order and email
+                if memory.memory.user_email and memory.memory.order_placed and memory.memory.email_sent:
+                    logger.debug("Order placed and email sent successfully, exiting")
                     break
+                
+                iteration += 1
+                await asyncio.sleep(0.1)  # Prevent throttling
             
-            # Increment iteration counter
-            current_iteration += 1
-            if current_iteration >= max_iterations:
-                logger.warning(f"Reached maximum iterations ({max_iterations}), stopping execution")
-                break
+            print("\n" + "="*50 + " Session Complete " + "="*50 + "\n")
             
-            print(f"{'='*20} End of iteration {current_iteration} {'='*20}\n")
-            # Add a small delay to prevent throttling
-            await asyncio.sleep(1)
-
-        logger.info(f"Main application completed in {time.time() - main_start:.2f}s")
-
-    except Exception as e:
-        logger.error(f"Error in main application after {time.time() - main_start:.2f}s: {e}", exc_info=True)
-    finally:
-        if assistant:
-            try:
-                await assistant.cleanup()
-            except Exception as e:
-                logger.error(f"Error during final cleanup: {e}", exc_info=True)
-                # Don't re-raise the error since we're in cleanup
+            if iteration >= max_iterations:
+                logger.warning("Reached maximum iterations without completing the task")
 
 if __name__ == "__main__":
     asyncio.run(main()) 

@@ -20,13 +20,41 @@ logger = logging.getLogger(__name__)
 
 
 class ActionLayer:
-    def __init__(self, recipe_session: ClientSession, delivery_session: ClientSession, gmail_session: ClientSession, memory_layer: MemoryLayer):
+    def __init__(self, recipe_session: ClientSession, delivery_session: ClientSession, gmail_session: ClientSession, memory: MemoryLayer):
         logger.debug("Initializing ActionLayer")
         self.recipe_session = recipe_session
         self.delivery_session = delivery_session
         self.gmail_session = gmail_session
-        self.memory = memory_layer
+        self.memory = memory
         logger.debug(f"ActionLayer initialized with memory: {self.memory}")
+
+    async def get_recipe(self, input_model: GetRecipeInput) -> Dict:
+        """Get recipe details using the recipe MCP tool"""
+        logger.info(f"Getting recipe for: {input_model.dish_name}")
+        try:
+            result = await self.recipe_session.call_tool(
+                "get_recipe",
+                {"input": input_model.model_dump()}
+            )
+            logger.debug(f"Raw recipe result: {result}")
+            return result
+        except Exception as e:
+            logger.error(f"Error getting recipe: {str(e)}", exc_info=True)
+            raise
+
+    async def compare_ingredients(self, input_model: CompareIngredientsInput) -> Dict:
+        """Compare ingredients using the recipe MCP tool"""
+        logger.info("Comparing ingredients")
+        try:
+            result = await self.recipe_session.call_tool(
+                "compare_ingredients",
+                {"input": input_model.model_dump()}
+            )
+            logger.debug(f"Raw comparison result: {result}")
+            return result
+        except Exception as e:
+            logger.error(f"Error comparing ingredients: {str(e)}", exc_info=True)
+            raise
 
     async def execute(self, action_plan: ActionPlan) -> ToolResponse:
         """Execute the action plan from the decision layer"""

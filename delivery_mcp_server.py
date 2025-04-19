@@ -14,6 +14,7 @@ mcp = FastMCP("Delivery")
 
 # Simulated product database
 PRODUCTS = {
+    # Original recipe ingredients
     "spaghetti": 2.99,
     "eggs": 3.49,
     "pecorino cheese": 6.99,
@@ -27,7 +28,82 @@ PRODUCTS = {
     "curry powder": 4.99,
     "coconut milk": 2.99,
     "tomatoes": 2.49,
-    "rice": 3.99
+    "rice": 3.99,
+    
+    # Beef Stir Fry ingredients
+    "beef sirloin": 12.99,
+    "broccoli": 2.99,
+    "carrots": 1.99,
+    "bell peppers": 2.49,
+    "soy sauce": 3.49,
+    "vegetable oil": 2.99,
+    "cornstarch": 1.99,
+    
+    # Mushroom Risotto ingredients
+    "arborio rice": 4.99,
+    "mushrooms": 3.99,
+    "white wine": 8.99,
+    "vegetable broth": 2.99,
+    "parmesan cheese": 6.99,
+    "butter": 3.99,
+    "olive oil": 4.99,
+    "thyme": 1.99,
+    
+    # Fish Tacos ingredients
+    "white fish fillets": 9.99,
+    "lime": 0.99,
+    "tortillas": 2.99,
+    "cabbage": 2.49,
+    "cilantro": 1.49,
+    "sour cream": 2.99,
+    "avocado": 2.99,
+    "chili powder": 3.49,
+    "cumin": 3.49,
+    "garlic powder": 2.99,
+    
+    # Vegetable Lasagna ingredients
+    "lasagna noodles": 3.99,
+    "zucchini": 1.99,
+    "spinach": 2.99,
+    "ricotta cheese": 4.99,
+    "mozzarella cheese": 4.99,
+    "marinara sauce": 3.99,
+    "basil": 1.99,
+    
+    # Chicken Fajitas ingredients (some already listed)
+    
+    # Shrimp Scampi ingredients
+    "shrimp": 12.99,
+    "linguine": 2.99,
+    "lemon": 0.99,
+    "parsley": 1.49,
+    "red pepper flakes": 2.49,
+    
+    # Thai Green Curry ingredients
+    "green curry paste": 3.99,
+    "chicken thighs": 6.99,
+    "bamboo shoots": 2.49,
+    "fish sauce": 2.99,
+    "palm sugar": 3.49,
+    "thai basil": 1.99,
+    "lime leaves": 2.49,
+    
+    # Beef Bourguignon ingredients
+    "beef chuck": 10.99,
+    "bacon": 5.99,
+    "red wine": 12.99,
+    "pearl onions": 2.99,
+    "bay leaves": 1.99,
+    
+    # Eggplant Parmesan ingredients
+    "eggplant": 2.99,
+    "breadcrumbs": 1.99,
+    
+    # Lemon Herb Salmon ingredients
+    "salmon fillets": 14.99,
+    "dill": 1.99,
+    "capers": 3.49,
+    "pepper": 3.99
 }
 
 # Simulated orders database

@@ -193,6 +193,7 @@ class EmailFormatParams(BaseModel):
     """Model for email formatting parameters"""
     items: List[str]
     order_id: str
+    total: float  # Adding total price field
 
 class ErrorResponse(BaseModel):
     """Model for standardized error responses"""
