@@ -222,4 +222,87 @@ $ python main.py
 > Please provide your email: user@example.com
 > Order placed! Check your email for confirmation.
 > Here are your cooking instructions...
-``` 
+```
+
+### PADM Model in Action - Example Flow
+
+```mermaid
+graph TD
+    subgraph "Iteration 1: Recipe Selection"
+        P1[Perception: Get Dish Name] -->|"vegetable lasagna"| M1[Memory: Store Dish]
+        M1 --> D1[Decision: Need Recipe]
+        D1 --> A1[Action: Fetch Recipe]
+        A1 -->|"Update Memory"| M1
+    end
+
+    subgraph "Iteration 2: Ingredient Check"
+        P2[Perception: Get Pantry Items] -->|"Available: noodles,<br/>zucchini,cheese..."| M2[Memory: Store Pantry]
+        M2 --> D2[Decision: Compare Ingredients]
+        D2 -->|"Missing: garlic,<br/>marinara,onion,spinach"| M2
+    end
+
+    subgraph "Iteration 3: Order Placement"
+        P3[Perception: Get Email] -->|"user@email.com"| M3[Memory: Store Email]
+        M3 --> D3[Decision: Place Order]
+        D3 --> A3[Action: Create Order]
+        A3 -->|"Order ID: af54b91d"| M3
+    end
+
+    subgraph "Iteration 4: Confirmation"
+        M4[Memory: Check State] --> D4[Decision: Send Email]
+        D4 --> A4[Action: Send Confirmation]
+        A4 -->|"Email Sent"| M4
+        M4 -->|"All Complete"| P4[Perception: Display Recipe]
+    end
+
+    Iteration 1 --> Iteration 2
+    Iteration 2 --> Iteration 3
+    Iteration 3 --> Iteration 4
+
+    style P1 fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
+    style P2 fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
+    style P3 fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
+    style P4 fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
+
+    style M1 fill:#b0e0e6,stroke:#333,stroke-width:2px,color:#000
+    style M2 fill:#b0e0e6,stroke:#333,stroke-width:2px,color:#000
+    style M3 fill:#b0e0e6,stroke:#333,stroke-width:2px,color:#000
+    style M4 fill:#b0e0e6,stroke:#333,stroke-width:2px,color:#000
+
+    style D1 fill:#dda0dd,stroke:#333,stroke-width:2px,color:#000
+    style D2 fill:#dda0dd,stroke:#333,stroke-width:2px,color:#000
+    style D3 fill:#dda0dd,stroke:#333,stroke-width:2px,color:#000
+    style D4 fill:#dda0dd,stroke:#333,stroke-width:2px,color:#000
+
+    style A1 fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+    style A3 fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+    style A4 fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+```
+
+The diagram above shows how the PADM model processes a complete cooking assistant interaction:
+
+**Iteration 1: Recipe Selection**
+- Perception gets dish name from user
+- Memory stores the selection
+- Decision determines recipe needed
+- Action fetches recipe details
+
+**Iteration 2: Ingredient Check**
+- Perception collects pantry items
+- Memory stores available ingredients
+- Decision compares with recipe requirements
+- Identifies missing ingredients
+
+**Iteration 3: Order Placement**
+- Perception gets user email
+- Memory stores contact info
+- Decision initiates order
+- Action places order for missing items
+
+**Iteration 4: Confirmation**
+- Memory checks order status
+- Decision triggers email
+- Action sends confirmation
+- Perception displays final recipe
+
+Each iteration shows the PADM components working together, with Memory acting as the central state manager, Decision making the next step choices, Action executing external operations, and Perception handling user interaction. 

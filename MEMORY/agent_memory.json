@@ -1,40 +1,44 @@
 {
-  "dish_name": "chicken curry",
+  "dish_name": "vegetable lasagna",
   "pantry_items": [
-    "chicken breast",
-    "onion",
-    "ginger",
-    "curry powder"
+    "lasagna noodles",
+    "zucchini",
+    "ricotta cheese",
+    "mozzarella cheese",
+    "olive oil",
+    "basil"
   ],
   "required_ingredients": [
-    "chicken breast",
-    "onion",
+    "lasagna noodles",
+    "zucchini",
+    "spinach",
+    "ricotta cheese",
+    "mozzarella cheese",
+    "marinara sauce",
     "garlic",
-    "ginger",
-    "curry powder",
-    "coconut milk",
-    "tomatoes",
-    "rice"
+    "onion",
+    "basil",
+    "olive oil"
   ],
   "missing_ingredients": [
-    "coconut milk",
     "garlic",
-    "rice",
-    "tomatoes"
+    "marinara sauce",
+    "onion",
+    "spinach"
   ],
   "recipe_steps": [
-    "Cut chicken into bite-sized pieces",
-    "Dice onion, mince garlic and ginger",
-    "Saut\u00e9 onion until translucent",
-    "Add garlic and ginger, cook until fragrant",
-    "Add curry powder and stir",
-    "Add chicken and cook until browned",
-    "Pour in coconut milk and diced tomatoes",
-    "Simmer for 20 minutes",
-    "Serve over cooked rice"
+    "Cook lasagna noodles",
+    "Saut\u00e9 zucchini, garlic, and onion",
+    "Wilt spinach",
+    "Mix ricotta with basil",
+    "Layer: sauce, noodles, vegetables, cheese",
+    "Repeat layers",
+    "Top with mozzarella",
+    "Bake until bubbly and golden",
+    "Let rest before serving"
   ],
   "order_placed": true,
-  "order_id": "38e807eb-918e-4263-82a9-f1e9862aa0b0",
+  "order_id": "af54b91d-7634-4059-a16b-09875f1138ea",
   "email_sent": true,
-  "user_email": "sudarshanravi13+order@gmail.com"
+  "user_email": "sudarshanravi13+reciever@gmail.com"
 }
