@@ -1,11 +1,19 @@
 from mcp.server import FastMCP
 from mcp.types import TextContent
-from typing import Dict
+from typing import Dict, List, Any
 from models import (
     GetRecipeInput, GetRecipeOutput,
-    CompareIngredientsInput, CompareIngredientsOutput,
-    ErrorResponse
+    ErrorResponse,
+    GetPantryInput, GetPantryOutput,
+    PantryCheckInput, PantryCheckOutput
 )
+from pydantic import BaseModel
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 
 # Initialize the MCP server
 mcp = FastMCP("Recipe")
@@ -361,53 +369,157 @@ def get_recipe(input: GetRecipeInput) -> dict:
             ]
         }
 
+# @mcp.tool()
+# def compare_ingredients(input: CompareIngredientsInput) -> dict:
+#     """Compare required ingredients against available ones and return missing ingredients"""
+#     try:
+#         # Convert both lists to lowercase for case-insensitive comparison
+#         required = set(item.lower() for item in input.required)
+#         available = set(item.lower() for item in input.available)
+        
+#         # Find missing ingredients (using set difference)
+#         missing = list(required - available)
+        
+#         # Sort the list for consistent output
+#         missing.sort()
+        
+#         # Create and validate output model
+#         output = CompareIngredientsOutput(missing_ingredients=missing)
+        
+#         # Return in MCP format
+#         return {
+#             "content": [
+#                 {
+#                     "type": "text",
+#                     "text": output.model_dump_json()
+#                 }
+#             ]
+#         }
+#     except Exception as e:
+#         error = ErrorResponse(
+#             error_type="ComparisonError",
+#             message=f"Failed to compare ingredients: {str(e)}",
+#             details={
+#                 "required": input.required,
+#                 "available": input.available
+#             }
+#         )
+#         return {
+#             "content": [
+#                 {
+#                     "type": "text",
+#                     "text": error.model_dump_json()
+#                 }
+#             ]
+#         }
+
+# @mcp.tool()
+# async def get_pantry_items(input: GetPantryInput) -> dict:
+#     """Get user's available ingredients based on recipe requirements"""
+#     try:
+#         required_ingredients = input.required_ingredients
+
+#         print("\nFor this recipe, you'll need:")
+#         for i, ingredient in enumerate(required_ingredients, 1):
+#             print(f"{i}. {ingredient}")
+
+#         print("\nEnter the numbers of ingredients you ALREADY HAVE (separated by spaces):")
+#         while True:
+#             try:
+#                 available_nums = input().strip().split()
+#                 available_nums = [int(num) for num in available_nums if 1 <= int(num) <= len(required_ingredients)]
+#                 available_ingredients = [required_ingredients[i-1] for i in available_nums]
+                
+#                 # Create and validate output
+#                 output = GetPantryOutput(available_ingredients=available_ingredients)
+                
+#                 return {
+#                     "content": [
+#                         {
+#                             "type": "text",
+#                             "text": output.model_dump_json()
+#                         }
+#                     ]
+#                 }
+#             except ValueError:
+#                 print("Please enter valid numbers separated by spaces. Try again:")
+
+#     except Exception as e:
+#         error = ErrorResponse(
+#             error_type="PantryError",
+#             message=f"Error getting pantry items: {str(e)}",
+#             details={"required_ingredients": required_ingredients}
+#         )
+#         return {
+#             "content": [
+#                 {
+#                     "type": "text",
+#                     "text": error.model_dump_json()
+#                 }
+#             ]
+#         }
+
 @mcp.tool()
-def compare_ingredients(input: CompareIngredientsInput) -> dict:
-    """Compare required ingredients against available ones and return missing ingredients"""
-    try:
-        # Convert both lists to lowercase for case-insensitive comparison
-        required = set(item.lower() for item in input.required)
-        available = set(item.lower() for item in input.available)
-        
-        # Find missing ingredients (using set difference)
-        missing = list(required - available)
-        
-        # Sort the list for consistent output
-        missing.sort()
-        
-        # Create and validate output model
-        output = CompareIngredientsOutput(missing_ingredients=missing)
-        
-        # Return in MCP format
-        return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": output.model_dump_json()
-                }
-            ]
-        }
-    except Exception as e:
-        error = ErrorResponse(
-            error_type="ComparisonError",
-            message=f"Failed to compare ingredients: {str(e)}",
-            details={
-                "required": input.required,
-                "available": input.available
-            }
-        )
-        return {
-            "content": [
-                {
-                    "type": "text",
-                    "text": error.model_dump_json()
-                }
-            ]
-        }
+def check_pantry(input: PantryCheckInput) -> Dict[str, Any]:
+    """Check what ingredients are available in user's pantry and what's missing from required ingredients so that you may place an order for the missing items."""
+    logger.info(f"Checking pantry for required ingredients: {input.required_ingredients}")
+    
+    # Get pantry items from user input
+    print("\nPlease enter the ingredients you have in your pantry.")
+    print("Enter each ingredient on a new line. Type 'done' when finished.")
+    print("\nRequired ingredients:")
+    for ing in input.required_ingredients:
+        print(f"- {ing}")
+    
+    pantry_items = []
+    while True:
+        try:
+            item = input().strip().lower()
+            if item == 'done':
+                break
+            if item:  # Only add non-empty items
+                pantry_items.append(item)
+        except EOFError:
+            break
+    
+    # Compare ingredients to find missing ones
+    missing_ingredients = []
+    available_ingredients = []
+    
+    for required in input.required_ingredients:
+        # Check if any pantry item matches or is similar to the required ingredient
+        found = False
+        for pantry_item in pantry_items:
+            # Simple matching - could be enhanced with fuzzy matching
+            if required.lower() in pantry_item or pantry_item in required.lower():
+                available_ingredients.append(required)
+                found = True
+                break
+        if not found:
+            missing_ingredients.append(required)
+    
+    # Create message
+    if missing_ingredients:
+        message = f"You have {len(available_ingredients)} of {len(input.required_ingredients)} required ingredients.\n"
+        message += "Missing ingredients:\n" + "\n".join(f"- {ing}" for ing in missing_ingredients)
+    else:
+        message = "You have all required ingredients!"
+    
+    result = PantryCheckOutput(
+        available_ingredients=available_ingredients,
+        missing_ingredients=missing_ingredients,
+        message=message
+    )
+    
+    return {
+        "content": [{
+            "text": result.model_dump_json()
+        }]
+    }
 
 def main():
+    print("Recipe MCP server running...")
     mcp.run()
 
 if __name__ == "__main__":
-    print("Recipe MCP server running...")
     main() 

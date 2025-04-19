@@ -22,15 +22,6 @@ class GetRecipeOutput(BaseModel):
     required_ingredients: List[str]
     recipe_steps: List[str]
 
-class CompareIngredientsInput(BaseModel):
-    """Input model for compare_ingredients tool"""
-    required: List[str]
-    available: List[str]
-
-class CompareIngredientsOutput(BaseModel):
-    """Output model for compare_ingredients tool"""
-    missing_ingredients: List[str]
-
 class PlaceOrderInput(BaseModel):
     """Input model for place_order tool"""
     items: List[str]
@@ -41,6 +32,24 @@ class PlaceOrderOutput(BaseModel):
     order_id: str
     total: float
 
+class GetPantryInput(BaseModel):
+    """Input model for get_pantry_items tool"""
+    required_ingredients: List[str]
+
+class GetPantryOutput(BaseModel):
+    """Output model for get_pantry_items tool"""
+    available_ingredients: List[str]
+
+class GetOrderStatusInput(BaseModel):
+    """Input model for get_order_status tool"""
+    order_id: str
+
+class GetOrderStatusOutput(BaseModel):
+    """Output model for get_order_status tool"""
+    status: str
+    estimated_delivery: Optional[str] = None
+    details: Optional[Dict[str, Any]] = None
+
 class SendEmailInput(BaseModel):
     """Input model for send_email tool"""
     to: str
@@ -49,18 +58,29 @@ class SendEmailInput(BaseModel):
 
 class SendEmailOutput(BaseModel):
     """Output model for send_email tool"""
-    message_id: str  # Only message_id is required for email confirmation
+    message_id: str
 
-class GetOrderStatusInput(BaseModel):
-    """Input model for get_order_status tool"""
-    order_id: str
+# LLM Interaction Models
+class ReasoningBlock(BaseModel):
+    """Model for LLM reasoning steps"""
+    type: Literal["reasoning_block"]
+    reasoning_type: str
+    steps: List[str]
+    verify: str
+    next: str
+    fallback_plan: str
 
-class GetOrderStatusOutput(BaseModel):
-    """Output model for get_order_status tool"""
-    order_id: str
-    status: str
-    items: List[str]
-    total: float
+class FunctionCall(BaseModel):
+    """Model for LLM function calls"""
+    type: Literal["function_call"]
+    function: str
+    parameters: Dict[str, Any]
+    on_fail: str
+
+class FinalAnswer(BaseModel):
+    """Model for LLM final answers"""
+    type: Literal["final_answer"]
+    value: str
 
 # Perception Models
 class RawUserInput(BaseModel):
@@ -95,7 +115,7 @@ class UserIntent(BaseModel):
     """Model for parsed user intent"""
     dish_name: str = Field(min_length=1, max_length=100)
     pantry_items: List[str] = Field(default_factory=list)
-    user_email: EmailStr
+    user_email: Optional[EmailStr] = None
 
 class PerceptionError(BaseModel):
     """Model for perception layer errors"""
@@ -106,8 +126,10 @@ class PerceptionError(BaseModel):
 # Memory Models
 class AgentMemory(BaseModel):
     """Model for agent's memory state"""
+    # Core state
     dish_name: constr(min_length=1, max_length=100) = ""
     pantry_items: List[constr(min_length=1, max_length=50)] = Field(default_factory=list)
+    available_pantry_items: List[str] = Field(default_factory=list)  # New field for user's available ingredients
     required_ingredients: List[constr(min_length=1, max_length=50)] = Field(default_factory=list)
     missing_ingredients: List[constr(min_length=1, max_length=50)] = Field(default_factory=list)
     recipe_steps: List[str] = Field(default_factory=list)
@@ -115,6 +137,13 @@ class AgentMemory(BaseModel):
     order_id: Optional[str] = None
     email_sent: bool = False
     user_email: Optional[EmailStr] = None
+    
+    # Metadata
+    current_state: str = "initial"  # Track process state
+    last_action: Optional[str] = None
+    last_action_status: Optional[str] = None
+    retries: int = 0
+    last_error: Optional[str] = None
 
 class MemoryError(BaseModel):
     """Model for memory layer errors"""
@@ -123,14 +152,18 @@ class MemoryError(BaseModel):
     details: Dict[str, Any] = Field(default_factory=dict)
 
 # Decision Models
-class ActionType(Enum):
+class ActionType(str, Enum):
     """Enum for different types of actions"""
     FETCH_RECIPE = "fetch_recipe"
-    CHECK_INGREDIENTS = "check_ingredients"
+    GET_PANTRY = "get_pantry"
     PLACE_ORDER = "place_order"
     SEND_EMAIL = "send_email"
     DISPLAY_RECIPE = "display_recipe"
+    CHECK_ORDER_STATUS = "check_order_status"
     INVALID_INPUT = "invalid_input"
+
+# Union type for LLM responses
+LLMResponse = Union[ReasoningBlock, FunctionCall, FinalAnswer]
 
 class FetchRecipeParams(BaseModel):
     """Parameters for fetch recipe action"""
@@ -159,13 +192,38 @@ class InvalidInputParams(BaseModel):
     """Parameters for invalid input action"""
     message: Optional[str] = None
 
+class CheckOrderStatusParams(BaseModel):
+    """Parameters for checking order status"""
+    order_id: Optional[str] = None
+
+class CheckOrderStatusOutput(BaseModel):
+    """Output for order status check"""
+    order_exists: bool
+    order_id: Optional[str] = None
+    message: str
+
+class PantryCheckInput(BaseModel):
+    """Input model for checking pantry against required ingredients"""
+    required_ingredients: List[str]
+
+class PantryCheckOutput(BaseModel):
+    """Output model for pantry check results"""
+    available_ingredients: List[str]
+    missing_ingredients: List[str]
+    message: str
+
 # Union type for all action parameters
 ActionParams = Union[
     FetchRecipeParams,
+    GetPantryInput,
     CheckIngredientsParams,
+    PlaceOrderInput,
     PlaceOrderParams,
+    SendEmailInput,
     SendEmailParams,
     DisplayRecipeParams,
+    PantryCheckInput,
+    CheckOrderStatusParams,
     InvalidInputParams
 ]
 
@@ -199,4 +257,4 @@ class ErrorResponse(BaseModel):
     """Model for standardized error responses"""
     error_type: str
     message: str
-    details: Dict[str, Any] = Field(default_factory=dict) 
+    details: Dict[str, Any] = Field(default_factory=dict)

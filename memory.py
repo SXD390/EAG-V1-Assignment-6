@@ -1,11 +1,11 @@
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import logging
 import json
 import os
 from models import AgentMemory, MemoryError, UserIntent
+from pydantic import BaseModel, Field
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
+# Get logger for this module
 logger = logging.getLogger(__name__)
 
 class MemoryLayer:
@@ -87,8 +87,21 @@ class MemoryLayer:
         try:
             # Create a dict of current values
             current_data = self.memory.model_dump()
+            
             # Update with new values
             current_data.update(kwargs)
+            
+            # If updating action-related fields, also update metadata
+            if 'last_action' in kwargs:
+                current_data['current_state'] = 'action_in_progress'
+                current_data['last_action_status'] = 'started'
+                current_data['retries'] = 0
+            
+            # If updating error-related fields, increment retries
+            if 'last_error' in kwargs:
+                current_data['last_action_status'] = 'failed'
+                current_data['retries'] = self.memory.retries + 1
+            
             # Validate entire state
             self.memory = AgentMemory.model_validate(current_data)
             self.save_memory()
@@ -106,31 +119,53 @@ class MemoryLayer:
         logger.debug(f"Getting current memory state: {self.memory}")
         return self.memory
 
-    def get_context(self, perceived_input) -> dict:
+    def get_context(self, perceived_input: Optional[UserIntent] = None) -> dict:
         """Get context for decision making based on perceived input and memory"""
         logger.info("Getting context for decision making")
         logger.debug(f"Perceived input: {perceived_input}")
         
         try:
-            # Only update fields that are present in the perceived input
-            # while preserving other memory state
-            logger.debug("Updating memory with perceived input while preserving state")
-            updates = {}
-            if perceived_input.dish_name:
-                updates["dish_name"] = perceived_input.dish_name
-            if perceived_input.pantry_items:
-                updates["pantry_items"] = perceived_input.pantry_items
-            if perceived_input.user_email:
-                updates["user_email"] = perceived_input.user_email
+            # Update memory if new input is provided
+            if perceived_input:
+                updates = {}
+                if perceived_input.dish_name:
+                    updates["dish_name"] = perceived_input.dish_name
+                if perceived_input.pantry_items:
+                    updates["pantry_items"] = perceived_input.pantry_items
+                if perceived_input.user_email:
+                    updates["user_email"] = perceived_input.user_email
+                
+                if updates:
+                    self.update_memory(**updates)
             
-            if updates:
-                self.update_memory(**updates)
-            
-            # Create context dictionary
+            # Create context dictionary with metadata
             context = {
-                "current_state": self.memory.model_dump(),
-                "user_request": perceived_input.model_dump()
+                "current_state": {
+                    "state": self.memory.current_state,
+                    "last_action": self.memory.last_action,
+                    "last_action_status": self.memory.last_action_status,
+                    "retries": self.memory.retries,
+                    "last_error": self.memory.last_error
+                },
+                "task_progress": {
+                    "dish_name": self.memory.dish_name,
+                    "recipe_obtained": bool(self.memory.required_ingredients),
+                    "ingredients_checked": bool(self.memory.missing_ingredients),
+                    "order_placed": self.memory.order_placed,
+                    "email_sent": self.memory.email_sent
+                },
+                "recipe_details": {
+                    "required_ingredients": self.memory.required_ingredients,
+                    "pantry_items": self.memory.pantry_items,
+                    "missing_ingredients": self.memory.missing_ingredients,
+                    "recipe_steps": self.memory.recipe_steps
+                },
+                "order_details": {
+                    "order_id": self.memory.order_id,
+                    "user_email": self.memory.user_email
+                }
             }
+            
             logger.debug(f"Created context: {context}")
             return context
             
@@ -144,9 +179,11 @@ class MemoryLayer:
             raise ValueError(error.model_dump_json())
 
     def clear_memory(self) -> None:
-        """Reset memory to initial state (in-memory only)"""
-        logger.info("Resetting in-memory state")
+        """Reset memory to initial state"""
+        logger.info("Resetting memory state")
         self.memory = AgentMemory()
+        if self.persist_to_disk:
+            self.save_memory()
         logger.debug("Memory reset to initial state")
 
     def _clear_memory_file(self) -> None:

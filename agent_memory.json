@@ -1,35 +1,38 @@
 {
-  "dish_name": "pasta carbonara",
+  "dish_name": "Chicken Curry",
   "pantry_items": [
-    "spaghetti",
-    "eggs",
-    "pecorino cheese"
+    "chicken"
   ],
+  "available_pantry_items": [],
   "required_ingredients": [
-    "spaghetti",
-    "eggs",
-    "pecorino cheese",
-    "guanciale",
-    "black pepper",
-    "salt"
+    "chicken breast",
+    "onion",
+    "garlic",
+    "ginger",
+    "curry powder",
+    "coconut milk",
+    "tomatoes",
+    "rice"
   ],
-  "missing_ingredients": [
-    "black pepper",
-    "guanciale",
-    "salt"
-  ],
+  "missing_ingredients": [],
   "recipe_steps": [
-    "Bring a large pot of salted water to boil",
-    "Cook spaghetti according to package instructions",
-    "While pasta cooks, whisk eggs and grated pecorino in a bowl",
-    "Crisp guanciale in a pan until golden brown",
-    "Drain pasta, reserving some pasta water",
-    "Mix pasta with egg mixture and guanciale",
-    "Add pasta water if needed to create a creamy sauce",
-    "Season with black pepper and serve immediately"
+    "Cut chicken into bite-sized pieces",
+    "Dice onion, mince garlic and ginger",
+    "Saut\u00e9 onion until translucent",
+    "Add garlic and ginger, cook until fragrant",
+    "Add curry powder and stir",
+    "Add chicken and cook until browned",
+    "Pour in coconut milk and diced tomatoes",
+    "Simmer for 20 minutes",
+    "Serve over cooked rice"
   ],
-  "order_placed": true,
-  "order_id": "43de0c1a-67a4-42f7-9050-09a5e2f1eb1a",
-  "email_sent": true,
-  "user_email": "sudarshanravi13+rec@gmail.com"
+  "order_placed": false,
+  "order_id": null,
+  "email_sent": false,
+  "user_email": null,
+  "current_state": "action_in_progress",
+  "last_action": "get_pantry",
+  "last_action_status": "started",
+  "retries": 0,
+  "last_error": null
 }
