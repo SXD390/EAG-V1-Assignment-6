@@ -1,35 +1,44 @@
 {
-  "dish_name": "pasta carbonara",
+  "dish_name": "vegetable lasagna",
   "pantry_items": [
-    "spaghetti",
-    "eggs",
-    "pecorino cheese"
+    "lasagna noodles",
+    "zucchini",
+    "spinach",
+    "ricotta cheese"
   ],
   "required_ingredients": [
-    "spaghetti",
-    "eggs",
-    "pecorino cheese",
-    "guanciale",
-    "black pepper",
-    "salt"
+    "lasagna noodles",
+    "zucchini",
+    "spinach",
+    "ricotta cheese",
+    "mozzarella cheese",
+    "marinara sauce",
+    "garlic",
+    "onion",
+    "basil",
+    "olive oil"
   ],
   "missing_ingredients": [
-    "black pepper",
-    "guanciale",
-    "salt"
+    "basil",
+    "garlic",
+    "marinara sauce",
+    "mozzarella cheese",
+    "olive oil",
+    "onion"
   ],
   "recipe_steps": [
-    "Bring a large pot of salted water to boil",
-    "Cook spaghetti according to package instructions",
-    "While pasta cooks, whisk eggs and grated pecorino in a bowl",
-    "Crisp guanciale in a pan until golden brown",
-    "Drain pasta, reserving some pasta water",
-    "Mix pasta with egg mixture and guanciale",
-    "Add pasta water if needed to create a creamy sauce",
-    "Season with black pepper and serve immediately"
+    "Cook lasagna noodles",
+    "Saut\u00e9 zucchini, garlic, and onion",
+    "Wilt spinach",
+    "Mix ricotta with basil",
+    "Layer: sauce, noodles, vegetables, cheese",
+    "Repeat layers",
+    "Top with mozzarella",
+    "Bake until bubbly and golden",
+    "Let rest before serving"
   ],
   "order_placed": true,
-  "order_id": "43de0c1a-67a4-42f7-9050-09a5e2f1eb1a",
+  "order_id": "06058512-9a7d-47be-8eb1-e09998ec97e2",
   "email_sent": true,
   "user_email": "sudarshanravi13+rec@gmail.com"
 }

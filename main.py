@@ -479,13 +479,26 @@ async def main():
 
                 # Check if we're done - wait for both order and email
                 if memory.memory.user_email and memory.memory.order_placed and memory.memory.email_sent:
-                    logger.debug("Order placed and email sent successfully, exiting")
+                    logger.debug("Order placed and email sent successfully")
+                    # Display recipe in a clean format
+                    print("\n" + "="*50 + " Recipe Steps " + "="*50)
+                    print(f"\nRecipe for {memory.memory.dish_name.title()}:\n")
+                    print("Ingredients you have:")
+                    for item in memory.memory.pantry_items:
+                        print(f"✓ {item}")
+                    
+                    print("\nIngredients ordered:")
+                    for item in memory.memory.missing_ingredients:
+                        print(f"→ {item}")
+                    
+                    print("\nCooking Steps:")
+                    for i, step in enumerate(memory.memory.recipe_steps, 1):
+                        print(f"{i}. {step}")
+                    print("\n" + "="*50 + " Happy Cooking! " + "="*50 + "\n")
                     break
                 
                 iteration += 1
                 await asyncio.sleep(0.1)  # Prevent throttling
-            
-            print("\n" + "="*50 + " Session Complete " + "="*50 + "\n")
             
             if iteration >= max_iterations:
                 logger.warning("Reached maximum iterations without completing the task")
