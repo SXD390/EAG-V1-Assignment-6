@@ -5,8 +5,8 @@ A sophisticated AI-powered kitchen assistant that helps users manage recipes, in
 ## 🌟 High-Level Overview
 
 The Smart Kitchen Assistant is an intelligent agent that:
-- 🔍 Finds recipes based on user requests
-- 📝 Checks available ingredients against recipe requirements
+- 🔍 Finds recipes based on user requests(as of now only a dozen recipies are available as per static coding)
+- 📝 Checks available ingredients in user's pantry against recipe requirements
 - 🛒 Automatically orders missing ingredients
 - 📧 Sends email confirmations for orders
 - 👩‍🍳 Provides step-by-step cooking instructions
@@ -56,20 +56,76 @@ graph TD
     K --> L[Send Email Confirmation]
     L --> M
     
-    style A fill:#f9d71c,stroke:#333,stroke-width:2px
-    style B fill:#87ceeb,stroke:#333,stroke-width:2px
-    style C fill:#98fb98,stroke:#333,stroke-width:2px
-    style D fill:#87ceeb,stroke:#333,stroke-width:2px
-    style E fill:#98fb98,stroke:#333,stroke-width:2px
-    style F fill:#87ceeb,stroke:#333,stroke-width:2px
-    style G fill:#98fb98,stroke:#333,stroke-width:2px
-    style H fill:#87ceeb,stroke:#333,stroke-width:2px
-    style I fill:#87ceeb,stroke:#333,stroke-width:2px
-    style J fill:#98fb98,stroke:#333,stroke-width:2px
-    style K fill:#ffa07a,stroke:#333,stroke-width:2px
-    style L fill:#dda0dd,stroke:#333,stroke-width:2px
-    style M fill:#90ee90,stroke:#333,stroke-width:2px
+    style A fill:#f9d71c,stroke:#333,stroke-width:2px,color:#000
+    style B fill:#87ceeb,stroke:#333,stroke-width:2px,color:#000
+    style C fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#87ceeb,stroke:#333,stroke-width:2px,color:#000
+    style E fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+    style F fill:#87ceeb,stroke:#333,stroke-width:2px,color:#000
+    style G fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+    style H fill:#87ceeb,stroke:#333,stroke-width:2px,color:#000
+    style I fill:#87ceeb,stroke:#333,stroke-width:2px,color:#000
+    style J fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+    style K fill:#ffa07a,stroke:#333,stroke-width:2px,color:#000
+    style L fill:#dda0dd,stroke:#333,stroke-width:2px,color:#000
+    style M fill:#90ee90,stroke:#333,stroke-width:2px,color:#000
 ```
+
+### PADM Architecture Flow
+
+```mermaid
+graph TD
+    subgraph Perception[Perception Layer]
+        P1[User Input Handler] --> P2[Input Parser]
+        P2 --> P3[Input Validator]
+    end
+
+    subgraph Memory[Memory Layer]
+        M1[State Manager] --> M2[Persistence Handler]
+        M2 --> M3[Context Provider]
+    end
+
+    subgraph Decision[Decision Layer]
+        D1[Action Planner] --> D2[State Analyzer]
+        D2 --> D3[Next Action Determiner]
+    end
+
+    subgraph Action[Action Layer]
+        A1[Recipe Service] --> A2[Delivery Service]
+        A2 --> A3[Email Service]
+    end
+
+    P3 --> M1
+    M3 --> D1
+    D3 --> A1
+
+    style Perception fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
+    style Memory fill:#b0e0e6,stroke:#333,stroke-width:2px,color:#000
+    style Decision fill:#dda0dd,stroke:#333,stroke-width:2px,color:#000
+    style Action fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+    
+    style P1 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    style P2 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    style P3 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    
+    style M1 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    style M2 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    style M3 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    
+    style D1 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    style D2 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    style D3 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    
+    style A1 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    style A2 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    style A3 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+```
+
+The PADM architecture diagram shows how the four cognitive layers interact:
+1. **Perception Layer**: Handles all user inputs, validates them, and prepares them for processing
+2. **Memory Layer**: Manages application state, persists data, and provides context for decision making
+3. **Decision Layer**: Analyzes current state and determines next actions based on the system's goals
+4. **Action Layer**: Executes actions through various services (Recipe, Delivery, Email)
 
 ### Detailed Implementation
 
