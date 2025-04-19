@@ -86,7 +86,7 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 logger.info("Loading environment variables...")
 start_time = time.time()
-load_dotenv()
+load_dotenv("./credentials/.env")
 logger.info(f"Environment variables loaded in {time.time() - start_time:.2f}s")
 
 # Initialize Gemini client
@@ -269,101 +269,101 @@ Remember:
 - ALWAYS compare ingredients immediately after getting recipe
 - Only display recipe when ingredients are secured"""
 
-    async def setup(self):
-        """Setup the assistant components"""
-        setup_start = time.time()
-        logger.info("Starting assistant setup...")
+    # async def setup(self):
+    #     """Setup the assistant components"""
+    #     setup_start = time.time()
+    #     logger.info("Starting assistant setup...")
 
-        # Create MCP server connections
-        logger.info("Establishing connections to MCP servers...")
+    #     # Create MCP server connections
+    #     logger.info("Establishing connections to MCP servers...")
 
-        recipe_params = StdioServerParameters(
-            command="python",
-            args=["recipe_mcp_server.py"]
-        )
-        delivery_params = StdioServerParameters(
-            command="python",
-            args=["delivery_mcp_server.py"]
-        )
-        gmail_params = StdioServerParameters(
-            command="python",
-            args=["gmail_mcp_server.py", "--creds-file-path", "credentials.json", "--token-path", "token.json"]
-        )
+    #     recipe_params = StdioServerParameters(
+    #         command="python",
+    #         args=["./MCP_SERVERS/recipe_mcp_server.py"]
+    #     )
+    #     delivery_params = StdioServerParameters(
+    #         command="python",
+    #         args=["./MCP_SERVERS/delivery_mcp_server.py"]
+    #     )
+    #     gmail_params = StdioServerParameters(
+    #         command="python",
+    #         args=["./MCP_SERVERS/gmail_mcp_server.py", "--creds-file-path", "./credentials/credentials.json", "--token-path", "./credentials/token.json"]
+    #     )
 
-        # Create and store clients using context managers
-        recipe_cm = stdio_client(recipe_params)
-        delivery_cm = stdio_client(delivery_params)
-        gmail_cm = stdio_client(gmail_params)
+    #     # Create and store clients using context managers
+    #     recipe_cm = stdio_client(recipe_params)
+    #     delivery_cm = stdio_client(delivery_params)
+    #     gmail_cm = stdio_client(gmail_params)
         
-        self._context_managers.extend([recipe_cm, delivery_cm, gmail_cm])
+    #     self._context_managers.extend([recipe_cm, delivery_cm, gmail_cm])
         
-        recipe_io = await recipe_cm.__aenter__()
-        delivery_io = await delivery_cm.__aenter__()
-        gmail_io = await gmail_cm.__aenter__()
+    #     recipe_io = await recipe_cm.__aenter__()
+    #     delivery_io = await delivery_cm.__aenter__()
+    #     gmail_io = await gmail_cm.__aenter__()
 
-        # Create sessions using context managers
-        recipe_session_cm = ClientSession(*recipe_io)
-        delivery_session_cm = ClientSession(*delivery_io)
-        gmail_session_cm = ClientSession(*gmail_io)
+    #     # Create sessions using context managers
+    #     recipe_session_cm = ClientSession(*recipe_io)
+    #     delivery_session_cm = ClientSession(*delivery_io)
+    #     gmail_session_cm = ClientSession(*gmail_io)
         
-        self._context_managers.extend([recipe_session_cm, delivery_session_cm, gmail_session_cm])
+    #     self._context_managers.extend([recipe_session_cm, delivery_session_cm, gmail_session_cm])
         
-        self.recipe_session = await recipe_session_cm.__aenter__()
-        self.delivery_session = await delivery_session_cm.__aenter__()
-        self.gmail_session = await gmail_session_cm.__aenter__()
+    #     self.recipe_session = await recipe_session_cm.__aenter__()
+    #     self.delivery_session = await delivery_session_cm.__aenter__()
+    #     self.gmail_session = await gmail_session_cm.__aenter__()
 
-        logger.info("Sessions created, initializing...")
-        await self.recipe_session.initialize()
-        await self.delivery_session.initialize()
-        await self.gmail_session.initialize()
+    #     logger.info("Sessions created, initializing...")
+    #     await self.recipe_session.initialize()
+    #     await self.delivery_session.initialize()
+    #     await self.gmail_session.initialize()
 
-        # Get available tools
-        logger.info("Fetching available tools...")
-        tools_start = time.time()
-        recipe_tools = await self.recipe_session.list_tools()
-        delivery_tools = await self.delivery_session.list_tools()
-        gmail_tools = await self.gmail_session.list_tools()
-        logger.info(f"Tools fetched in {time.time() - tools_start:.2f}s")
+    #     # Get available tools
+    #     logger.info("Fetching available tools...")
+    #     tools_start = time.time()
+    #     recipe_tools = await self.recipe_session.list_tools()
+    #     delivery_tools = await self.delivery_session.list_tools()
+    #     gmail_tools = await self.gmail_session.list_tools()
+    #     logger.info(f"Tools fetched in {time.time() - tools_start:.2f}s")
 
-        # Create tools description
-        logger.info("Creating tools description...")
-        tools_desc = []
-        for tools_result in [recipe_tools, delivery_tools, gmail_tools]:
-            if hasattr(tools_result, 'tools'):
-                tools = tools_result.tools
-            else:
-                tools = tools_result
+    #     # Create tools description
+    #     logger.info("Creating tools description...")
+    #     tools_desc = []
+    #     for tools_result in [recipe_tools, delivery_tools, gmail_tools]:
+    #         if hasattr(tools_result, 'tools'):
+    #             tools = tools_result.tools
+    #         else:
+    #             tools = tools_result
 
-            for tool in tools:
-                try:
-                    name = tool.name if hasattr(tool, 'name') else 'unnamed_tool'
-                    desc = tool.description if hasattr(tool, 'description') else 'No description available'
+    #         for tool in tools:
+    #             try:
+    #                 name = tool.name if hasattr(tool, 'name') else 'unnamed_tool'
+    #                 desc = tool.description if hasattr(tool, 'description') else 'No description available'
                     
-                    # Handle input schema
-                    params_str = 'no parameters'
-                    if hasattr(tool, 'inputSchema') and isinstance(tool.inputSchema, dict):
-                        if 'properties' in tool.inputSchema:
-                            param_details = []
-                            for param_name, param_info in tool.inputSchema['properties'].items():
-                                param_type = param_info.get('type', 'unknown')
-                                param_details.append(f"{param_name}: {param_type}")
-                            params_str = ', '.join(param_details)
+    #                 # Handle input schema
+    #                 params_str = 'no parameters'
+    #                 if hasattr(tool, 'inputSchema') and isinstance(tool.inputSchema, dict):
+    #                     if 'properties' in tool.inputSchema:
+    #                         param_details = []
+    #                         for param_name, param_info in tool.inputSchema['properties'].items():
+    #                             param_type = param_info.get('type', 'unknown')
+    #                             param_details.append(f"{param_name}: {param_type}")
+    #                         params_str = ', '.join(param_details)
 
-                    tool_desc = f"{len(tools_desc) + 1}. {name}({params_str}) - {desc}"
-                    tools_desc.append(tool_desc)
-                except Exception as e:
-                    logger.error(f"Error processing tool: {e}")
-                    continue
+    #                 tool_desc = f"{len(tools_desc) + 1}. {name}({params_str}) - {desc}"
+    #                 tools_desc.append(tool_desc)
+    #             except Exception as e:
+    #                 logger.error(f"Error processing tool: {e}")
+    #                 continue
         
-        # Create system prompt
-        logger.info("Creating system prompt...")
-        self.system_prompt = self.create_system_prompt("\n".join(tools_desc))
+    #     # Create system prompt
+    #     logger.info("Creating system prompt...")
+    #     self.system_prompt = self.create_system_prompt("\n".join(tools_desc))
         
-        # Initialize action layer
-        logger.info("Initializing action layer...")
-        self.action = ActionLayer(self.recipe_session, self.delivery_session, self.gmail_session, self.memory)
+    #     # Initialize action layer
+    #     logger.info("Initializing action layer...")
+    #     self.action = ActionLayer(self.recipe_session, self.delivery_session, self.gmail_session, self.memory)
         
-        logger.info(f"Assistant setup completed in {time.time() - setup_start:.2f}s")
+    #     logger.info(f"Assistant setup completed in {time.time() - setup_start:.2f}s")
 
     async def cleanup(self):
         """Cleanup resources"""
@@ -498,15 +498,15 @@ async def main():
     # Initialize components with MCP sessions
     recipe_params = StdioServerParameters(
         command="python",
-        args=["recipe_mcp_server.py"]
+        args=["./recipe_mcp_server.py"]
     )
     delivery_params = StdioServerParameters(
         command="python",
-        args=["delivery_mcp_server.py"]
+        args=["./delivery_mcp_server.py"]
     )
     gmail_params = StdioServerParameters(
         command="python",
-        args=["gmail_mcp_server.py", "--creds-file-path", "credentials.json", "--token-path", "token.json"]
+        args=["./gmail_mcp_server.py", "--creds-file-path", "./credentials/credentials.json", "--token-path", "./credentials/token.json"]
     )
 
     async with stdio_client(recipe_params) as recipe_io, \

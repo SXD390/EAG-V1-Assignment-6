@@ -8,7 +8,7 @@ from models import AgentMemory, MemoryError, UserIntent
 logger = logging.getLogger('memory')
 
 class MemoryLayer:
-    def __init__(self, memory_file: str = "agent_memory.json", persist_to_disk: bool = True):
+    def __init__(self, memory_file: str = "MEMORY/agent_memory.json", persist_to_disk: bool = True):
         logger.debug(f"Initializing MemoryLayer with memory file: {memory_file}")
         self.memory_file = memory_file
         self.persist_to_disk = persist_to_disk

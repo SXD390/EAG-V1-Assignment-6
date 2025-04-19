@@ -1,0 +1,40 @@
+{
+  "dish_name": "chicken curry",
+  "pantry_items": [
+    "chicken breast",
+    "onion",
+    "ginger",
+    "curry powder"
+  ],
+  "required_ingredients": [
+    "chicken breast",
+    "onion",
+    "garlic",
+    "ginger",
+    "curry powder",
+    "coconut milk",
+    "tomatoes",
+    "rice"
+  ],
+  "missing_ingredients": [
+    "coconut milk",
+    "garlic",
+    "rice",
+    "tomatoes"
+  ],
+  "recipe_steps": [
+    "Cut chicken into bite-sized pieces",
+    "Dice onion, mince garlic and ginger",
+    "Saut\u00e9 onion until translucent",
+    "Add garlic and ginger, cook until fragrant",
+    "Add curry powder and stir",
+    "Add chicken and cook until browned",
+    "Pour in coconut milk and diced tomatoes",
+    "Simmer for 20 minutes",
+    "Serve over cooked rice"
+  ],
+  "order_placed": true,
+  "order_id": "38e807eb-918e-4263-82a9-f1e9862aa0b0",
+  "email_sent": true,
+  "user_email": "sudarshanravi13+order@gmail.com"
+}
