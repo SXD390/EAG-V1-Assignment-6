@@ -228,36 +228,36 @@ $ python main.py
 
 ```mermaid
 graph TD
-    subgraph "Iteration 1: Recipe Selection"
+    subgraph iter1[Iteration 1: Recipe Selection]
         P1[Perception: Get Dish Name] -->|"vegetable lasagna"| M1[Memory: Store Dish]
         M1 --> D1[Decision: Need Recipe]
         D1 --> A1[Action: Fetch Recipe]
         A1 -->|"Update Memory"| M1
     end
 
-    subgraph "Iteration 2: Ingredient Check"
+    subgraph iter2[Iteration 2: Ingredient Check]
         P2[Perception: Get Pantry Items] -->|"Available: noodles,<br/>zucchini,cheese..."| M2[Memory: Store Pantry]
         M2 --> D2[Decision: Compare Ingredients]
         D2 -->|"Missing: garlic,<br/>marinara,onion,spinach"| M2
     end
 
-    subgraph "Iteration 3: Order Placement"
+    subgraph iter3[Iteration 3: Order Placement]
         P3[Perception: Get Email] -->|"user@email.com"| M3[Memory: Store Email]
         M3 --> D3[Decision: Place Order]
         D3 --> A3[Action: Create Order]
         A3 -->|"Order ID: af54b91d"| M3
     end
 
-    subgraph "Iteration 4: Confirmation"
+    subgraph iter4[Iteration 4: Confirmation]
         M4[Memory: Check State] --> D4[Decision: Send Email]
         D4 --> A4[Action: Send Confirmation]
         A4 -->|"Email Sent"| M4
         M4 -->|"All Complete"| P4[Perception: Display Recipe]
     end
 
-    Iteration 1 --> Iteration 2
-    Iteration 2 --> Iteration 3
-    Iteration 3 --> Iteration 4
+    M1 --> P2
+    M2 --> P3
+    M3 --> M4
 
     style P1 fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
     style P2 fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
@@ -277,6 +277,11 @@ graph TD
     style A1 fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
     style A3 fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
     style A4 fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+
+    style iter1 fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
+    style iter2 fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
+    style iter3 fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
+    style iter4 fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
 ```
 
 The diagram above shows how the PADM model processes a complete cooking assistant interaction:
