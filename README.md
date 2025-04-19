@@ -258,7 +258,7 @@ graph TD
     end
 
     subgraph iter3[Iteration 3: Order Placement]
-        P3[Perception: Get Email] -->|"sudarshanravi13+reciever@gmail.com"| M3[Memory: Store Email]
+        P3[Perception: Get Email] -->|"<USER_ENTERS_EMAIL>"| M3[Memory: Store Email]
         M3 --> D3[Decision: Place Order]
         D3 --> A3[Action: Create Order]
         A3 -->|"Order ID: af54b91d"| M3
