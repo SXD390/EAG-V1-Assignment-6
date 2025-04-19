@@ -4,9 +4,8 @@ import json
 import os
 from models import AgentMemory, MemoryError, UserIntent
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# Configure module logger
+logger = logging.getLogger('memory')
 
 class MemoryLayer:
     def __init__(self, memory_file: str = "agent_memory.json", persist_to_disk: bool = True):

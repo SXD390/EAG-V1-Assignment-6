@@ -15,9 +15,8 @@ from models import (
 import pydantic
 import json
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# Configure module logger
+logger = logging.getLogger('action')
 
 
 class ActionLayer:

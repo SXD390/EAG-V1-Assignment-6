@@ -13,13 +13,74 @@ from decision import DecisionLayer
 from action import ActionLayer
 from typing import Optional
 from models import ActionPlan
+import colorama
+from colorama import Fore, Back, Style
 
 # Configure logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    datefmt='%H:%M:%S'
-)
+colorama.init()
+
+class ColoredFormatter(logging.Formatter):
+    """Custom formatter with colors"""
+    
+    COLORS = {
+        'memory': Fore.LIGHTBLUE_EX,
+        'action': Fore.LIGHTGREEN_EX,
+        'decision': Fore.LIGHTMAGENTA_EX,
+        'perception': Fore.LIGHTYELLOW_EX,
+        'main': Fore.LIGHTCYAN_EX,  # Adding cyan color for main module
+        '__main__': Fore.LIGHTCYAN_EX,  # Also handle __main__ module name
+        'DEBUG': Fore.WHITE,
+        'INFO': Fore.WHITE,
+        'WARNING': Fore.YELLOW,
+        'ERROR': Fore.RED,
+        'CRITICAL': Back.RED + Fore.WHITE
+    }
+
+    def format(self, record):
+        # Save original message
+        original_msg = record.msg
+        
+        # Add color based on logger name
+        if hasattr(record, 'name'):
+            module_name = record.name.split('.')[-1]  # Get the last part of the logger name
+            if module_name in self.COLORS:
+                color = self.COLORS[module_name]
+                # Add box formatting for specific types of messages
+                if 'Current memory state' in str(record.msg):
+                    record.msg = f"\n{color}{'='*100}\n{str(record.msg)}\n{'='*100}{Style.RESET_ALL}"
+                elif any(x in str(record.msg) for x in ['Recipe Steps', 'Happy Cooking', 'Session Complete']):
+                    record.msg = f"\n{color}{'*'*100}\n{str(record.msg)}\n{'*'*100}{Style.RESET_ALL}"
+                elif 'Starting iteration' in str(record.msg) or 'Iteration complete' in str(record.msg):
+                    record.msg = f"\n{color}{'~'*50} {str(record.msg)} {'~'*50}{Style.RESET_ALL}"
+                else:
+                    record.msg = f"{color}{str(record.msg)}{Style.RESET_ALL}"
+        
+        # Format the message
+        formatted_msg = super().format(record)
+        
+        # Restore original message
+        record.msg = original_msg
+        
+        return formatted_msg
+
+# Create and configure the formatter
+formatter = ColoredFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
+
+# Configure root logger
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+
+# Remove any existing handlers
+for handler in root_logger.handlers[:]:
+    root_logger.removeHandler(handler)
+
+# Create and configure console handler
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(formatter)
+root_logger.addHandler(console_handler)
+
+# Get module logger
 logger = logging.getLogger(__name__)
 
 # Load environment variables

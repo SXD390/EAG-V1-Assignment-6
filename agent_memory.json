@@ -4,7 +4,8 @@
     "lasagna noodles",
     "zucchini",
     "spinach",
-    "ricotta cheese"
+    "ricotta cheese",
+    "olive oil"
   ],
   "required_ingredients": [
     "lasagna noodles",
@@ -23,7 +24,6 @@
     "garlic",
     "marinara sauce",
     "mozzarella cheese",
-    "olive oil",
     "onion"
   ],
   "recipe_steps": [
@@ -38,7 +38,7 @@
     "Let rest before serving"
   ],
   "order_placed": true,
-  "order_id": "06058512-9a7d-47be-8eb1-e09998ec97e2",
+  "order_id": "2f124011-e362-4902-ba37-5a729862119c",
   "email_sent": true,
-  "user_email": "sudarshanravi13+rec@gmail.com"
+  "user_email": "sudarshanravi+12@gmail.com"
 }

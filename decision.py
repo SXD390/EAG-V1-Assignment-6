@@ -6,9 +6,8 @@ from models import (
     AgentMemory
 )
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# Configure module logger
+logger = logging.getLogger('decision')
 
 class DecisionLayer:
     def __init__(self):

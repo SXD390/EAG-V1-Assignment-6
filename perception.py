@@ -2,9 +2,8 @@ from typing import Dict, Any, List
 import logging
 from models import UserIntent, PerceptionError, RawUserInput
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# Configure module logger
+logger = logging.getLogger('perception')
 
 class PerceptionLayer:
     def __init__(self):
