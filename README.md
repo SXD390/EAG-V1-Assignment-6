@@ -75,50 +75,63 @@ graph TD
 
 ```mermaid
 graph TD
-    subgraph Perception[Perception Layer]
-        P1[User Input Handler] --> P2[Input Parser]
-        P2 --> P3[Input Validator]
+    %% Define arrow styles
+    linkStyle default stroke:#ff8c00,stroke-width:3px
+
+    subgraph iter1[Iteration 1: Recipe Selection]
+        P1[Perception: Get Dish Name] -->|"vegetable lasagna"| M1[Memory: Store Dish]
+        M1 --> D1[Decision: Need Recipe]
+        D1 --> A1[Action: Fetch Recipe]
+        A1 -->|"Update Memory"| M1
     end
 
-    subgraph Memory[Memory Layer]
-        M1[State Manager] --> M2[Persistence Handler]
-        M2 --> M3[Context Provider]
+    subgraph iter2[Iteration 2: Ingredient Check]
+        P2[Perception: Get Pantry Items] -->|"Available: noodles,<br/>zucchini,cheese..."| M2[Memory: Store Pantry]
+        M2 --> D2[Decision: Compare Ingredients]
+        D2 -->|"Missing: garlic,<br/>marinara,onion,spinach"| M2
     end
 
-    subgraph Decision[Decision Layer]
-        D1[Action Planner] --> D2[State Analyzer]
-        D2 --> D3[Next Action Determiner]
+    subgraph iter3[Iteration 3: Order Placement]
+        P3[Perception: Get Email] -->|"sudarshanravi13+reciever@gmail.com"| M3[Memory: Store Email]
+        M3 --> D3[Decision: Place Order]
+        D3 --> A3[Action: Create Order]
+        A3 -->|"Order ID: af54b91d"| M3
     end
 
-    subgraph Action[Action Layer]
-        A1[Recipe Service] --> A2[Delivery Service]
-        A2 --> A3[Email Service]
+    subgraph iter4[Iteration 4: Confirmation]
+        M4[Memory: Check State] --> D4[Decision: Send Email]
+        D4 --> A4[Action: Send Confirmation]
+        A4 -->|"Email Sent"| M4
+        M4 -->|"All Complete"| P4[Perception: Display Recipe]
     end
 
-    P3 --> M1
-    M3 --> D1
-    D3 --> A1
+    M1 --> P2
+    M2 --> P3
+    M3 --> M4
 
-    style Perception fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
-    style Memory fill:#b0e0e6,stroke:#333,stroke-width:2px,color:#000
-    style Decision fill:#dda0dd,stroke:#333,stroke-width:2px,color:#000
-    style Action fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
-    
-    style P1 fill:#fff,stroke:#333,stroke-width:1px,color:#000
-    style P2 fill:#fff,stroke:#333,stroke-width:1px,color:#000
-    style P3 fill:#fff,stroke:#333,stroke-width:1px,color:#000
-    
-    style M1 fill:#fff,stroke:#333,stroke-width:1px,color:#000
-    style M2 fill:#fff,stroke:#333,stroke-width:1px,color:#000
-    style M3 fill:#fff,stroke:#333,stroke-width:1px,color:#000
-    
-    style D1 fill:#fff,stroke:#333,stroke-width:1px,color:#000
-    style D2 fill:#fff,stroke:#333,stroke-width:1px,color:#000
-    style D3 fill:#fff,stroke:#333,stroke-width:1px,color:#000
-    
-    style A1 fill:#fff,stroke:#333,stroke-width:1px,color:#000
-    style A2 fill:#fff,stroke:#333,stroke-width:1px,color:#000
-    style A3 fill:#fff,stroke:#333,stroke-width:1px,color:#000
+    style P1 fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
+    style P2 fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
+    style P3 fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
+    style P4 fill:#ffe4b5,stroke:#333,stroke-width:2px,color:#000
+
+    style M1 fill:#b0e0e6,stroke:#333,stroke-width:2px,color:#000
+    style M2 fill:#b0e0e6,stroke:#333,stroke-width:2px,color:#000
+    style M3 fill:#b0e0e6,stroke:#333,stroke-width:2px,color:#000
+    style M4 fill:#b0e0e6,stroke:#333,stroke-width:2px,color:#000
+
+    style D1 fill:#dda0dd,stroke:#333,stroke-width:2px,color:#000
+    style D2 fill:#dda0dd,stroke:#333,stroke-width:2px,color:#000
+    style D3 fill:#dda0dd,stroke:#333,stroke-width:2px,color:#000
+    style D4 fill:#dda0dd,stroke:#333,stroke-width:2px,color:#000
+
+    style A1 fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+    style A3 fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+    style A4 fill:#98fb98,stroke:#333,stroke-width:2px,color:#000
+
+    style iter1 fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
+    style iter2 fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
+    style iter3 fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
+    style iter4 fill:#ffffff,stroke:#333,stroke-width:2px,color:#000
 ```
 
 The PADM architecture diagram shows how the four cognitive layers interact:
@@ -228,6 +241,9 @@ $ python main.py
 
 ```mermaid
 graph TD
+    %% Define arrow styles
+    linkStyle default stroke:#ff8c00,stroke-width:3px
+
     subgraph iter1[Iteration 1: Recipe Selection]
         P1[Perception: Get Dish Name] -->|"vegetable lasagna"| M1[Memory: Store Dish]
         M1 --> D1[Decision: Need Recipe]
@@ -242,7 +258,7 @@ graph TD
     end
 
     subgraph iter3[Iteration 3: Order Placement]
-        P3[Perception: Get Email] -->|"user@email.com"| M3[Memory: Store Email]
+        P3[Perception: Get Email] -->|"sudarshanravi13+reciever@gmail.com"| M3[Memory: Store Email]
         M3 --> D3[Decision: Place Order]
         D3 --> A3[Action: Create Order]
         A3 -->|"Order ID: af54b91d"| M3
