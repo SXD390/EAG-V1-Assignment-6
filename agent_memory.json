@@ -1,44 +1,35 @@
 {
-  "dish_name": "mushroom risotto",
+  "dish_name": "pasta carbonara",
   "pantry_items": [
-    "arborio rice",
-    "mushrooms",
-    "onion",
-    "garlic"
+    "spaghetti",
+    "eggs",
+    "pecorino cheese"
   ],
   "required_ingredients": [
-    "arborio rice",
-    "mushrooms",
-    "onion",
-    "garlic",
-    "white wine",
-    "vegetable broth",
-    "parmesan cheese",
-    "butter",
-    "olive oil",
-    "thyme"
+    "spaghetti",
+    "eggs",
+    "pecorino cheese",
+    "guanciale",
+    "black pepper",
+    "salt"
   ],
   "missing_ingredients": [
-    "butter",
-    "olive oil",
-    "parmesan cheese",
-    "thyme",
-    "vegetable broth",
-    "white wine"
+    "black pepper",
+    "guanciale",
+    "salt"
   ],
   "recipe_steps": [
-    "Saut\u00e9 mushrooms in butter until golden",
-    "Remove mushrooms and set aside",
-    "Saut\u00e9 onion and garlic in olive oil",
-    "Add rice and toast for 2 minutes",
-    "Add wine and stir until absorbed",
-    "Add hot broth gradually, stirring constantly",
-    "Cook until rice is creamy and al dente",
-    "Stir in mushrooms and parmesan",
-    "Season with thyme and serve hot"
+    "Bring a large pot of salted water to boil",
+    "Cook spaghetti according to package instructions",
+    "While pasta cooks, whisk eggs and grated pecorino in a bowl",
+    "Crisp guanciale in a pan until golden brown",
+    "Drain pasta, reserving some pasta water",
+    "Mix pasta with egg mixture and guanciale",
+    "Add pasta water if needed to create a creamy sauce",
+    "Season with black pepper and serve immediately"
   ],
   "order_placed": true,
-  "order_id": "c4f770b0-74b1-48a8-8aab-0b8dacee3170",
-  "email_sent": false,
-  "user_email": "sudarshanravi13@gmail.com"
+  "order_id": "43de0c1a-67a4-42f7-9050-09a5e2f1eb1a",
+  "email_sent": true,
+  "user_email": "sudarshanravi13+rec@gmail.com"
 }

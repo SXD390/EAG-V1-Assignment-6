@@ -62,15 +62,15 @@ async def generate_with_timeout(client, prompt, timeout=30):
 
 class GroceryAssistant:
     def __init__(self):
+        self._context_managers = []
         self.perception = PerceptionLayer()
-        self.memory = MemoryLayer(persist_to_disk=False)  # Use in-memory only
+        self.memory = MemoryLayer()
         self.decision = DecisionLayer()
-        self.action = None
+        self.action = None  # Will be initialized in setup
         self.system_prompt = None
         self.recipe_session = None
         self.delivery_session = None
         self.gmail_session = None
-        self._context_managers = []
 
     def create_system_prompt(self, tools_description: str) -> str:
         """Create the system prompt with available tools"""
@@ -209,13 +209,13 @@ Remember:
 - Only display recipe when ingredients are secured"""
 
     async def setup(self):
-        """Initialize MCP servers"""
-        logger.info("Starting assistant setup...")
+        """Setup the assistant components"""
         setup_start = time.time()
+        logger.info("Starting assistant setup...")
 
         # Create MCP server connections
         logger.info("Establishing connections to MCP servers...")
-    
+
         recipe_params = StdioServerParameters(
             command="python",
             args=["recipe_mcp_server.py"]

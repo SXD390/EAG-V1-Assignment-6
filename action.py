@@ -9,7 +9,8 @@ from models import (
     SendEmailInput, SendEmailOutput,
     TextContent, ToolResponse,
     ActionType, Decision, ActionPlan,
-    EmailFormatParams, ErrorResponse
+    EmailFormatParams, ErrorResponse,
+    GetOrderStatusOutput
 )
 import pydantic
 import json
@@ -283,14 +284,14 @@ class ActionLayer:
                         logger.error(f"JSON decode error: {je}", exc_info=True)
                         return ToolResponse(
                             content=[TextContent(
-                                text=f"Error decoding response: {str(je)}"
+                                text=f"Error decoding order response: {str(je)}"
                             )]
                         )
                     except pydantic.ValidationError as ve:
                         logger.error(f"Validation error: {ve}", exc_info=True)
                         return ToolResponse(
                             content=[TextContent(
-                                text=f"Error validating response: {str(ve)}"
+                                text=f"Error validating order response: {str(ve)}"
                             )]
                         )
                     except Exception as e:
@@ -308,85 +309,80 @@ class ActionLayer:
                 )
 
             elif decision.action == ActionType.SEND_EMAIL:
-                # Parameters are already validated as SendEmailParams
-                email_params = EmailFormatParams(
-                    items=decision.params.items,
-                    order_id=decision.params.order_id
-                )
-                
-                # Format the email message using validated parameters
-                message = self._format_order_email(
-                    email_params.items,
-                    email_params.order_id
-                )
-                
-                # Create and validate input model
-                input_model = SendEmailInput(
-                    to=decision.params.email,
-                    subject="Your Grocery Order Confirmation",
-                    message=message
-                )
-                
                 try:
-                    # Call tool with properly nested input
-                    result = await self.gmail_session.call_tool(
-                        "send_email",
-                        {"input": input_model.model_dump()}
+                    # Get order details including total
+                    order_response = await self.delivery_session.call_tool(
+                        "get_order_status",
+                        {"input": {"order_id": decision.params.order_id}}
                     )
                     
-                    # Parse the response using Pydantic model
-                    if hasattr(result, 'content') and result.content:
+                    # Parse order status response with proper nested JSON handling
+                    if hasattr(order_response, 'content') and order_response.content:
                         try:
-                            # Extract the inner JSON content (double-nested)
-                            try:
-                                # First parse to get the inner content
-                                first_parse = json.loads(result.content[0].text)
-                                
-                                if isinstance(first_parse, dict) and 'content' in first_parse:
-                                    # Get the text content from the inner structure
-                                    inner_text = first_parse['content'][0]['text']
-                                    # Parse the actual model data
-                                    inner_json = json.loads(inner_text)
-                                else:
-                                    # If not nested, use the first parse
-                                    inner_json = first_parse
-                                
-                                # Validate against SendEmailOutput model
-                                email_output = SendEmailOutput.model_validate(inner_json)
-                                
-                                # Update memory after successful email send
-                                self.memory.update_memory(email_sent=True)
-                                
-                                return ToolResponse(
-                                    content=[TextContent(
-                                        text=f"Email sent successfully to {input_model.to}\nMessage ID: {email_output.message_id}"
-                                    )]
-                                )
-                            except json.JSONDecodeError as je:
-                                raise
-                            except pydantic.ValidationError as ve:
-                                # If not a SendEmailOutput, try parsing as ErrorResponse
-                                error_response = ErrorResponse.model_validate(inner_json)
-                                raise ValueError(error_response.model_dump_json())
-                                
-                        except Exception as e:
-                            logger.error(f"Error sending email: {e}", exc_info=True)
-                            error_response = ErrorResponse(
-                                error_type="ValidationError",
-                                message=f"Error parsing email response: {str(e)}",
-                                details={"response_content": result.content[0].text if result.content else None}
+                            # First parse: Get the inner JSON string
+                            first_parse = json.loads(order_response.content[0].text)
+                            
+                            # Second parse: Parse the actual model data
+                            inner_json = json.loads(first_parse['content'][0]['text'])
+                            
+                            # Validate against GetOrderStatusOutput model
+                            order_data = GetOrderStatusOutput.model_validate(inner_json)
+                            
+                            # Parameters are already validated as SendEmailParams
+                            email_params = EmailFormatParams(
+                                items=decision.params.items,
+                                order_id=decision.params.order_id,
+                                total=order_data.total
                             )
-                            raise ValueError(error_response.model_dump_json())
+                            
+                            # Format the email message using validated parameters
+                            message = self._format_order_email(
+                                email_params.items,
+                                email_params.order_id,
+                                email_params.total
+                            )
+                            
+                            # Create and validate input model
+                            input_model = SendEmailInput(
+                                to=decision.params.email,
+                                subject="Your Grocery Order Confirmation",
+                                message=message
+                            )
+                            
+                            # Call tool with properly nested input
+                            result = await self.gmail_session.call_tool(
+                                "send_email",
+                                {"input": input_model.model_dump()}
+                            )
+                            
+                            # Parse the response with proper JSON handling
+                            first_parse = json.loads(result.content[0].text)
+                            inner_json = json.loads(first_parse['content'][0]['text'])
+                            email_output = SendEmailOutput.model_validate(inner_json)
+                            
+                            # Update memory after successful email send
+                            self.memory.update_memory(email_sent=True)
+                            
+                            return ToolResponse(
+                                content=[TextContent(
+                                    text=f"Email sent successfully to {input_model.to}\nMessage ID: {email_output.message_id}"
+                                )]
+                            )
+                        except json.JSONDecodeError as je:
+                            logger.error(f"JSON decode error: {je}", exc_info=True)
+                            raise ValueError(f"Error decoding response: {str(je)}")
+                        except pydantic.ValidationError as ve:
+                            logger.error(f"Validation error: {ve}", exc_info=True)
+                            raise ValueError(f"Error validating response: {str(ve)}")
+                    else:
+                        raise ValueError("No order status data received")
                 except Exception as e:
                     logger.error(f"Error sending email: {e}", exc_info=True)
                     # Ensure email_sent is False in memory if sending failed
                     self.memory.update_memory(email_sent=False)
                     return ToolResponse(
                         content=[TextContent(
-                            text=str(e) if isinstance(e, ValueError) else ErrorResponse(
-                                error_type="EmailError",
-                                message=f"Failed to send email: {str(e)}"
-                            ).model_dump_json()
+                            text=f"Error sending email: {str(e)}"
                         )]
                     )
 
@@ -413,7 +409,7 @@ class ActionLayer:
                 )]
             )
 
-    def _format_order_email(self, items: list, order_id: str) -> str:
+    def _format_order_email(self, items: list, order_id: str, total: float) -> str:
         """Format the order confirmation email with beautiful HTML"""
         items_list = "\n".join([f"<li style='margin: 8px 0;'>{item}</li>" for item in items])
         
@@ -438,6 +434,10 @@ class ActionLayer:
                 <strong>Order ID:</strong> 
                 <span style="background-color: #F7FAFC; padding: 5px 10px; border-radius: 5px; font-family: monospace;">{order_id}</span>
             </p>
+            <p style="color: #4A5568; margin: 15px 0;">
+                <strong>Total Amount:</strong> 
+                <span style="background-color: #F7FAFC; padding: 5px 10px; border-radius: 5px; color: #38A169; font-weight: bold;">${total:.2f}</span>
+            </p>
         </div>
 
         <!-- Items List -->
@@ -446,6 +446,9 @@ class ActionLayer:
             <ul style="list-style-type: none; padding-left: 0; color: #4A5568;">
                 {items_list}
             </ul>
+            <p style="color: #718096; margin-top: 15px; font-style: italic;">
+                Total Items: {len(items)}
+            </p>
         </div>
 
         <!-- Delivery Info -->
@@ -454,6 +457,24 @@ class ActionLayer:
             <p style="color: #4A5568; margin: 15px 0;">
                 Your ingredients will be delivered soon. We'll make sure everything arrives fresh and ready for your cooking adventure!
             </p>
+        </div>
+
+        <!-- Order Summary -->
+        <div style="background-color: #F7FAFC; border-radius: 10px; padding: 20px; margin-bottom: 20px; text-align: right;">
+            <table style="width: 100%; color: #4A5568;">
+                <tr>
+                    <td style="padding: 8px; text-align: left;"><strong>Subtotal:</strong></td>
+                    <td style="padding: 8px; text-align: right;">${total:.2f}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; text-align: left;"><strong>Delivery:</strong></td>
+                    <td style="padding: 8px; text-align: right;">Free</td>
+                </tr>
+                <tr style="font-size: 1.2em; font-weight: bold; color: #2D3748;">
+                    <td style="padding: 12px 8px; text-align: left; border-top: 2px solid #E2E8F0;">Total:</td>
+                    <td style="padding: 12px 8px; text-align: right; border-top: 2px solid #E2E8F0;">${total:.2f}</td>
+                </tr>
+            </table>
         </div>
 
         <!-- Footer -->
